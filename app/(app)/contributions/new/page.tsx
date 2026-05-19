@@ -7,7 +7,7 @@ import { Window } from '@/components/y2k/window';
 import { Button } from '@/components/y2k/button';
 import { TextInput } from '@/components/y2k/text-input';
 import { Select } from '@/components/y2k/select';
-import { useAuth } from '@/lib/mock/auth-context';
+import { useCurrentUser } from '@/lib/auth/client';
 import { useMockStore } from '@/lib/mock/store';
 import { parseBahtInput } from '@/lib/money';
 
@@ -26,7 +26,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export default function NewContributionPage() {
-  const { currentUser } = useAuth();
+  const currentUser = useCurrentUser();
   const users = useMockStore((s) => s.users);
   const addContribution = useMockStore((s) => s.addContribution);
   const router = useRouter();

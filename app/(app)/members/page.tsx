@@ -4,12 +4,12 @@ import { Window } from '@/components/y2k/window';
 import { Button } from '@/components/y2k/button';
 import { Badge } from '@/components/y2k/badge';
 import { Dialog } from '@/components/y2k/dialog';
-import { useAuth } from '@/lib/mock/auth-context';
+import { useCurrentUser } from '@/lib/auth/client';
 import { useMockStore } from '@/lib/mock/store';
 import { can } from '@/lib/permissions';
 
 export default function MembersPage() {
-  const { currentUser } = useAuth();
+  const currentUser = useCurrentUser();
   const users = useMockStore((s) => s.users);
   const invites = useMockStore((s) => s.invites);
   const createInvite = useMockStore((s) => s.createInvite);

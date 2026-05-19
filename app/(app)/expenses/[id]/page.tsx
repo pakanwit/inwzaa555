@@ -5,7 +5,7 @@ import { Window } from '@/components/y2k/window';
 import { Button } from '@/components/y2k/button';
 import { Badge } from '@/components/y2k/badge';
 import { Dialog } from '@/components/y2k/dialog';
-import { useAuth } from '@/lib/mock/auth-context';
+import { useCurrentUser } from '@/lib/auth/client';
 import { useMockStore } from '@/lib/mock/store';
 import { formatBaht } from '@/lib/money';
 import { can } from '@/lib/permissions';
@@ -13,7 +13,7 @@ import { can } from '@/lib/permissions';
 export default function ExpenseDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { currentUser } = useAuth();
+  const currentUser = useCurrentUser();
   const users = useMockStore((s) => s.users);
   const expense = useMockStore((s) =>
     s.expenses.find((e) => e.id === params?.id),
