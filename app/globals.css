@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Y2K palette */
+  --color-y2k-chrome-50: #f7f7f7;
+  --color-y2k-chrome-100: #dfdfdf;
+  --color-y2k-chrome-200: #c0c0c0;   /* classic Win95 surface */
+  --color-y2k-chrome-300: #a8a8a8;
+  --color-y2k-chrome-400: #808080;
+  --color-y2k-chrome-700: #404040;
+  --color-y2k-chrome-900: #1a1a1a;
+  --color-y2k-blue: #0048d6;          /* link / title bar */
+  --color-y2k-blue-dark: #002a82;
+  --color-y2k-lime: #9fff00;
+  --color-y2k-magenta: #ff00c8;
+  --color-y2k-highlighter: #fffa3d;
+  --color-y2k-bsod: #0000aa;
+  --color-y2k-bsod-text: #ffffff;
+  --color-y2k-paper: #ffffff;
+
+  --font-sans: Tahoma, "MS Sans Serif", Verdana, Geneva, Arial, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html, body {
+  background: var(--color-y2k-chrome-200);
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0,0,0,0.04) 25%, transparent 25%);
+  background-size: 8px 8px;
+  color: var(--color-y2k-chrome-900);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.35;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  min-height: 100vh;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+a { color: var(--color-y2k-blue); text-decoration: underline; }
+a:visited { color: var(--color-y2k-blue-dark); }
+
+/* Beveled border utility used across components */
+@utility bevel-out {
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid var(--color-y2k-chrome-700);
+  border-bottom: 1px solid var(--color-y2k-chrome-700);
+  box-shadow: inset -1px -1px 0 0 var(--color-y2k-chrome-400),
+              inset  1px  1px 0 0 var(--color-y2k-chrome-100);
+}
+@utility bevel-in {
+  border-top: 1px solid var(--color-y2k-chrome-700);
+  border-left: 1px solid var(--color-y2k-chrome-700);
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  box-shadow: inset  1px  1px 0 0 var(--color-y2k-chrome-400),
+              inset -1px -1px 0 0 var(--color-y2k-chrome-100);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Focus rings: dotted, classic */
+*:focus-visible {
+  outline: 1px dotted var(--color-y2k-chrome-900);
+  outline-offset: 2px;
 }
