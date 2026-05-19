@@ -22,9 +22,6 @@ export default function NewExpensePage() {
   const addExpense = useMockStore((s) => s.addExpense);
   const router = useRouter();
 
-  if (!currentUser) return null;
-  const user = currentUser;
-
   const {
     register,
     handleSubmit,
@@ -36,10 +33,12 @@ export default function NewExpensePage() {
       amountBaht: '',
       category: 'food',
       occurredAt: new Date().toISOString().slice(0, 10),
-      paidBy: user.role === 'admin' ? 'pot' : user.id,
+      paidBy: currentUser?.role === 'admin' ? 'pot' : (currentUser?.id ?? ''),
     },
   });
 
+  if (!currentUser) return null;
+  const user = currentUser;
   const options = payerOptions(user, users);
 
   function onSubmit(values: ExpenseFormValues) {
