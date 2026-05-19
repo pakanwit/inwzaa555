@@ -1,12 +1,19 @@
 import type { Metadata } from 'next';
-import { Pixelify_Sans } from 'next/font/google';
+import { VT323, Orbitron } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const pixelify = Pixelify_Sans({
+const vt323 = VT323({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-pixelify',
+  weight: '400',
+  variable: '--font-vt323',
+  display: 'swap',
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  weight: ['500', '700', '900'],
+  variable: '--font-orbitron',
   display: 'swap',
 });
 
@@ -21,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={pixelify.variable}>
+    <html lang="en" className={`${vt323.variable} ${orbitron.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>

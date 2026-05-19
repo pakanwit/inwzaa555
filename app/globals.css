@@ -18,9 +18,9 @@
   --color-y2k-bsod-text: #ffffff;
   --color-y2k-paper: #ffffff;
 
-  --font-sans: var(--font-pixelify), Verdana, Geneva, "Trebuchet MS", Tahoma, Arial, sans-serif;
-  --font-display: var(--font-pixelify), "Trebuchet MS", Verdana, sans-serif;
-  --font-mono: "Courier New", Courier, monospace;
+  --font-sans: var(--font-vt323), "Courier New", Consolas, monospace;
+  --font-display: var(--font-orbitron), "Trebuchet MS", Verdana, sans-serif;
+  --font-mono: var(--font-vt323), "Courier New", Courier, monospace;
 }
 
 html, body {
@@ -31,15 +31,22 @@ html, body {
   background-size: 8px 8px;
   color: var(--color-y2k-chrome-900);
   font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: 17px;
+  line-height: 1.4;
   -webkit-font-smoothing: subpixel-antialiased;
   min-height: 100vh;
 }
 
 h1, h2, h3, h4, .y2k-title {
   font-family: var(--font-display);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Window title bars get the futuristic treatment */
+section > header {
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
 }
 
 a { color: var(--color-y2k-blue); text-decoration: underline; }
