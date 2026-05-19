@@ -22,38 +22,34 @@ A private web app for a 2-day-1-night trip with a small group of friends. Tracks
 |---|---|
 | Framework | Next.js 16 App Router |
 | Hosting | Vercel (Fluid Compute) |
-| Auth | Supabase Auth — magic link, restricted by `allowed_emails` table |
-| DB | Supabase Postgres |
+| Auth | Supabase Auth — **admin-provisioned users** (no public sign-up); friend lands signed in via emailed/copied magic link; never types email after that |
+| DB | Supabase Postgres (project ref `spcppkmqhvjcwhayeldt`) |
 | ORM | Drizzle |
 | Storage | Supabase Storage (private bucket `receipts`, RLS-gated) |
 | Styling | Tailwind CSS + hand-rolled Y2K component library (no shadcn, no 98.css) |
 | Forms | React Hook Form + Zod |
 | Money | Stored as integer cents (BIGINT), single currency THB in v1 |
+| Admin bootstrap | `ADMIN_EMAILS` env var — comma-separated list. First sign-in syncs the user into `users` table with `role='admin'` if email matches, else `role='member'`. |
 
 ## 4. Data Model
 
 ```sql
+-- Note: Supabase manages auth.users automatically. The users table below
+-- is OUR application-level profile, joined 1:1 with auth.users by id.
+
 users (
-  id            uuid PK (= supabase auth.users.id)
-  email         text unique not null
+  id            uuid PK references auth.users(id) on delete cascade
+  email         text unique not null     -- mirrored from auth.users for display in members page
   display_name  text not null
   avatar_url    text
   role          text not null default 'member'
                   check (role in ('admin','member'))
-  removed_at    timestamptz       -- soft-remove: can't sign in, but history preserved
+  removed_at    timestamptz       -- soft-remove: can't sign in (we revoke their auth.users session), but history preserved
   created_at    timestamptz default now()
 )
 
-invite_tokens (
-  id            uuid PK
-  token         text unique not null     -- random 32-char url-safe
-  created_by    uuid references users(id) not null
-  created_at    timestamptz default now()
-  expires_at    timestamptz not null     -- default created_at + 7 days
-  used_by       uuid references users(id) -- NULL while unused
-  used_at       timestamptz
-  revoked_at    timestamptz               -- admin can kill a link before use
-)
+-- invite_tokens table dropped — Supabase Auth's built-in invite mechanism
+-- (admin generates magic links via the Admin API) replaces it entirely.
 
 contributions (
   id              uuid PK
@@ -118,15 +114,15 @@ These derived values are computed in a single SQL view `v_balances` rather than 
 
 | Route | Purpose |
 |---|---|
-| `/login` | Magic link form. Rejects non-allowed emails before sending. |
+| `/login` | Renders a "tap to sign in" page when the user lands here without a Supabase session — primary purpose is to provide a fallback if a magic link expires; new users normally never visit this route. |
+| `/auth/callback` | Supabase magic-link callback handler. Exchanges the `code` query param for a session, ensures a `users` row exists (creates it with role from `ADMIN_EMAILS` allowlist on first sign-in), redirects to `/`. |
 | `/` | **Dashboard.** Pot total + remaining (big), suggested settlements ("Alice is owed ฿3,000"), recent expense feed (10 items), quick-add buttons. |
 | `/expenses` | Full expense list. Filter by category, payer, reimbursement status. |
 | `/expenses/new` | Add expense form: amount, description, category, occurred_at, paid_by (pot / me / other member), optional photo upload. |
 | `/expenses/[id]` | Detail: receipt fullscreen viewer, edit, delete, "Mark reimbursed" button (if fronted & unsettled). |
 | `/contributions` | List all contributions. |
 | `/contributions/new` | Add contribution form: who (self for members, anyone for admins), amount, when, optional transfer-screenshot upload. |
-| `/members` | Roster with role badges. Admin-only controls: generate/revoke invite link, copy link, soft-remove member, promote/demote. Members see read-only roster. |
-| `/invite/[token]` | Public invite-acceptance page (no auth needed). Validates token, collects email + display name, sends magic link, marks token used on successful first login. |
+| `/members` | Roster with role badges. Admin-only controls: "Copy magic link" (calls Supabase Admin API to generate a fresh link for that user), soft-remove member, promote/demote. Members see read-only roster. |
 
 ## 7. Roles, Permissions & Access
 
@@ -134,8 +130,8 @@ These derived values are computed in a single SQL view `v_balances` rather than 
 
 | Role | Granted at | Notes |
 |---|---|---|
-| `admin` | First user to sign in becomes admin automatically (bootstrap). Admins can promote/demote other members. | Cannot demote yourself if you are the last admin. |
-| `member` | Default for everyone joining via invite link. | |
+| `admin` | On first sign-in, the user's email is checked against the `ADMIN_EMAILS` env allowlist; if it matches, the new `users` row is created with `role='admin'`. After bootstrap, admins promote/demote others via the Members page. | Cannot demote yourself if you are the last admin. |
+| `member` | Default for everyone whose email isn't in `ADMIN_EMAILS` on first sign-in. | |
 
 A user with `removed_at IS NOT NULL` is **soft-removed**: cannot sign in, cannot mutate anything, but their expense/contribution history stays in the ledger (so balances remain correct).
 
@@ -160,22 +156,19 @@ A user with `removed_at IS NOT NULL` is **soft-removed**: cannot sign in, cannot
 
 Rule of thumb: **members own their own evidence; admins own the group.**
 
-### Invite-link flow
+### Onboarding flow (revised — admin-provisioned via Supabase Auth)
 
-1. Admin clicks "Generate invite link" on `/members` → server creates an `invite_tokens` row with a random 32-char token, 7-day expiry → link displayed as `https://<host>/invite/<token>` with a one-click copy button
-2. Admin shares link via Line/WhatsApp/etc.
-3. Friend opens link:
-   - Server validates token (exists, not expired, not used, not revoked)
-   - Friend enters email + display name → magic link sent
-   - On successful magic-link login, server creates `users` row with `role='member'` and marks the token `used_by` + `used_at`
-4. Admins can revoke an unused token from `/members` (sets `revoked_at`)
-5. Tokens are single-use; each new friend needs their own link
+1. Admin opens the Supabase Dashboard → Authentication → Users → "Add user" → enters the friend's email (placeholder OK if Supabase generates the invite link instead of emailing it). Sets `user_metadata.display_name` while creating.
+2. **Either** Supabase emails the invite link automatically (if the email is real), **or** the admin grabs a fresh magic link from the Members page in our app, which calls the Supabase Admin API (`auth.admin.generateLink({ type: 'magiclink', email })`) and copies it to the clipboard for sharing on Line/WhatsApp.
+3. Friend opens the link → lands on `/auth/callback` → session created → our callback handler upserts a `users` row using the email's match against `ADMIN_EMAILS` to decide the role → redirect to `/`.
+4. Subsequent visits: the friend's device already has a Supabase session (default ~1-year refresh token) — they go straight to `/`. No login form, no email entry.
+5. To kick someone out, admin sets `removed_at` (soft-remove) AND calls `auth.admin.deleteUser(id)` to revoke their Supabase session. Their ledger history stays intact.
 
 ### Enforcement
 
 - **Server actions** are the only mutation path. Every action runs a permission check helper (`requireAdmin()`, `requireOwnerOrAdmin(record)`) before touching the DB. No client-side trust.
 - **Supabase RLS** policies enforce the same rules at the DB layer as defense-in-depth (e.g., `UPDATE expenses` allowed when `auth.uid() = created_by OR auth.uid() IN (SELECT id FROM users WHERE role='admin')`).
-- **No public sign-up route.** The only way in is `/invite/<token>` with a valid token.
+- **No public sign-up route.** New users only exist if an admin creates them in the Supabase dashboard or via our Members page (which proxies to the Supabase Admin API behind an admin-only server action).
 
 ## 8. Image Storage
 
@@ -245,6 +238,36 @@ the-rich-boys/
 └── docs/superpowers/specs/
 ```
 
+## 10a. Environments & Migrations
+
+| Env | Database | Auth users | Storage bucket | Hosting |
+|---|---|---|---|---|
+| **Local dev** | Local Supabase via `supabase start` (Docker) — free, fully offline | Test users created by seed script | Local bucket | `npm run dev` |
+| **Production** | Supabase project `spcppkmqhvjcwhayeldt` | Real friends, admin-provisioned | `receipts` bucket on the prod project | Vercel deployment, `main` branch |
+
+**Migrations:** Drizzle generates SQL migrations into `drizzle/`. They are applied to **local** with `drizzle-kit push` (or `drizzle-kit migrate` once stable), and to **production** via the Supabase CLI: `supabase db push` from the linked project. Migrations are committed to git so every environment converges to the same schema.
+
+**Supabase Branching considered, deferred:** Supabase Branching creates per-git-branch preview databases (auto-wired to Vercel previews) but it's a Pro-plan paid feature (~$0.32/branch/day). For a small private friend-trip app with one developer it's overkill — local Supabase + a single prod project is simpler and free. If we later want PR-preview deploys against a real database, we can opt in by upgrading to Pro and enabling Branching with one click; no schema or code changes required.
+
+**Env-var contract:**
+```
+# Local .env.local
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<local anon key from `supabase status`>
+SUPABASE_SERVICE_ROLE_KEY=<local service role key from `supabase status`>
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+ADMIN_EMAILS=pak@example.com,friend1@example.com,friend2@example.com
+
+# Vercel production env
+NEXT_PUBLIC_SUPABASE_URL=https://spcppkmqhvjcwhayeldt.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<prod anon key>
+SUPABASE_SERVICE_ROLE_KEY=<prod service role key>          # server-only, never exposed
+DATABASE_URL=postgresql://postgres:<password>@db.spcppkmqhvjcwhayeldt.supabase.co:5432/postgres
+ADMIN_EMAILS=<real admin emails, comma-separated>
+```
+
+**Service role key safety:** only used inside server actions / API routes for admin operations (issuing magic links, deleting users). Never imported into a client component. Vercel will warn if it leaks.
+
 ## 11. Error Handling
 
 - Server actions wrap DB calls in try/catch and return discriminated-union results `{ ok: true, data } | { ok: false, error }`
@@ -278,9 +301,12 @@ Listed explicitly to prevent scope creep:
 ## 14. Open Questions Resolved
 
 - **Trip count:** single hardcoded trip in v1; no `trips` table
-- **Auth method:** magic link only, gated by single-use invite tokens
-- **Roles:** `admin` and `member`; first signup auto-promoted to admin
+- **Auth method:** Supabase Auth magic link; users provisioned by admin via Supabase Dashboard or Members page (`auth.admin.generateLink`); no custom invite_tokens, no public sign-up, no email entry on the friend's side after first link tap
+- **Initial admins:** comma-separated `ADMIN_EMAILS` env var; checked on first sign-in to assign role
+- **Multiple admins:** supported from day one (no role-count limits)
 - **Split logic:** equal share, implicit, computed from total ÷ member_count
 - **UI base:** fully hand-rolled Y2K theme, no 98.css or shadcn
 - **Currency:** THB only, stored as integer cents
-- **Member removal:** soft-delete (`removed_at`) to preserve ledger integrity
+- **Member removal:** soft-delete (`removed_at`) on our users table + `auth.admin.deleteUser` to revoke Supabase session
+- **Project name:** `inwzaa555`
+- **Dev/prod DBs:** local Supabase (`supabase start`) for dev, the existing prod project for production. Supabase Branching evaluated and deferred (paid feature, overkill for current scale).
