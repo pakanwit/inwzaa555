@@ -8,6 +8,13 @@
       "when": 1779216226970,
       "tag": "0000_users_table",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779218885956,
+      "tag": "0001_contributions_expenses",
+      "breakpoints": true
     }
   ]
 }
