@@ -16,7 +16,7 @@ export const users = pgTable(
     email: text('email').notNull().unique(),
     displayName: text('display_name').notNull(),
     avatarUrl: text('avatar_url'),
-    role: text('role').notNull().default('member'),
+    role: text('role').notNull().default('member').$type<'admin' | 'member'>(),
     removedAt: timestamp('removed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
