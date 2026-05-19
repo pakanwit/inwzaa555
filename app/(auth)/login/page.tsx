@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <main className="p-6 max-w-md mx-auto mt-8">
       <Marquee>
-        Welcome to TripKitty 2003!!! Best viewed in Internet Explorer 6.
+        Welcome to TripKitty 2026!!! Best viewed in Internet Explorer 6.
       </Marquee>
       <div className="h-3" />
       <Window title="Sign in to TripKitty">
