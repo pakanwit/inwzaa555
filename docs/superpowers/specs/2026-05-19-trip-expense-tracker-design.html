@@ -465,29 +465,25 @@ for each user u:
 
 <section id="s10a">
   <h2>10a. Environments &amp; Migrations</h2>
+  <p><strong>Single Supabase project for both dev and prod (v1).</strong> No local Supabase / Docker. Local <code>npm run dev</code> and Vercel production both connect to the same remote project <code>spcppkmqhvjcwhayeldt</code>.</p>
   <table>
-    <thead><tr><th>Env</th><th>Database</th><th>Auth users</th><th>Storage bucket</th><th>Hosting</th></tr></thead>
+    <thead><tr><th>Env</th><th>Connects to</th><th>Distinguished by</th></tr></thead>
     <tbody>
-      <tr><td><strong>Local dev</strong></td><td>Local Supabase via <code>supabase start</code> (Docker) — free, fully offline</td><td>Test users created by seed script</td><td>Local bucket</td><td><code>npm run dev</code></td></tr>
-      <tr><td><strong>Production</strong></td><td>Supabase project <code>spcppkmqhvjcwhayeldt</code></td><td>Real friends, admin-provisioned</td><td><code>receipts</code> bucket on the prod project</td><td>Vercel deployment, <code>main</code> branch</td></tr>
+      <tr><td><strong>Local dev</strong> (<code>npm run dev</code>)</td><td><code>spcppkmqhvjcwhayeldt</code></td><td><code>.env.local</code></td></tr>
+      <tr><td><strong>Vercel preview</strong></td><td><code>spcppkmqhvjcwhayeldt</code></td><td>Vercel env (Preview)</td></tr>
+      <tr><td><strong>Vercel production</strong></td><td><code>spcppkmqhvjcwhayeldt</code></td><td>Vercel env (Production)</td></tr>
     </tbody>
   </table>
-  <p><strong>Migrations:</strong> Drizzle generates SQL migrations into <code>drizzle/</code>. They are applied to <strong>local</strong> with <code>drizzle-kit push</code> (or <code>drizzle-kit migrate</code> once stable), and to <strong>production</strong> via the Supabase CLI: <code>supabase db push</code> from the linked project. Migrations are committed to git so every environment converges to the same schema.</p>
-  <p><strong>Supabase Branching considered, deferred:</strong> Supabase Branching creates per-git-branch preview databases (auto-wired to Vercel previews) but it's a Pro-plan paid feature (~$0.32/branch/day). For a small private friend-trip app with one developer it's overkill — local Supabase + a single prod project is simpler and free. If we later want PR-preview deploys against a real database, we can opt in by upgrading to Pro and enabling Branching with one click; no schema or code changes required.</p>
+  <p><strong>Trade-off accepted:</strong> dev/test inserts share rows with eventual production data. For a private friend-group trip app this is fine — we'll seed a small set of throwaway expenses during development and clean them up before the trip starts. If we later need isolation, we can either (a) provision a second Supabase project for <code>prod</code>, or (b) opt into Supabase Branching on the Pro plan.</p>
+  <p><strong>Migrations:</strong> Drizzle generates SQL into <code>drizzle/</code>. Applied to the remote project via the <strong>Supabase MCP</strong> (<code>apply_migration</code> tool) during development, and via <code>supabase db push</code> from CI for repeatable deployments. Every migration is committed to git.</p>
+  <p><strong>Pre-trip cutover:</strong> before sharing the app with the friend group, run a cleanup migration / seed script to wipe test data, then provision the real admin emails into Supabase Auth via the dashboard.</p>
   <p><strong>Env-var contract:</strong></p>
-<pre><code># Local .env.local
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=&lt;local anon key from `supabase status`&gt;
-SUPABASE_SERVICE_ROLE_KEY=&lt;local service role key from `supabase status`&gt;
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-ADMIN_EMAILS=pak@example.com,friend1@example.com,friend2@example.com
-
-# Vercel production env
+<pre><code># .env.local AND Vercel envs (both Preview and Production) — same values
 NEXT_PUBLIC_SUPABASE_URL=https://spcppkmqhvjcwhayeldt.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=&lt;prod anon key&gt;
-SUPABASE_SERVICE_ROLE_KEY=&lt;prod service role key&gt;          # server-only, never exposed
+NEXT_PUBLIC_SUPABASE_ANON_KEY=&lt;anon/publishable key&gt;
+SUPABASE_SERVICE_ROLE_KEY=&lt;service role key&gt;            # server-only, never exposed
 DATABASE_URL=postgresql://postgres:&lt;password&gt;@db.spcppkmqhvjcwhayeldt.supabase.co:5432/postgres
-ADMIN_EMAILS=&lt;real admin emails, comma-separated&gt;</code></pre>
+ADMIN_EMAILS=&lt;comma-separated admin emails&gt;</code></pre>
   <p><strong>Service role key safety:</strong> only used inside server actions / API routes for admin operations (issuing magic links, deleting users). Never imported into a client component. Vercel will warn if it leaks.</p>
 </section>
 
@@ -542,7 +538,7 @@ ADMIN_EMAILS=&lt;real admin emails, comma-separated&gt;</code></pre>
     <li><strong>Currency:</strong> THB only, stored as integer cents</li>
     <li><strong>Member removal:</strong> soft-delete (<code>removed_at</code>) on our users table + <code>auth.admin.deleteUser</code> to revoke Supabase session</li>
     <li><strong>Project name:</strong> <code>inwzaa555</code></li>
-    <li><strong>Dev/prod DBs:</strong> local Supabase (<code>supabase start</code>) for dev, the existing prod project for production. Supabase Branching evaluated and deferred (paid feature, overkill for current scale).</li>
+    <li><strong>Dev/prod DBs:</strong> single remote Supabase project (<code>spcppkmqhvjcwhayeldt</code>) used for local dev, Vercel preview, and Vercel production in v1. Pre-trip cleanup planned. Local Docker setup skipped to save friction; can split later if isolation becomes needed.</li>
   </ul>
 </section>
 
