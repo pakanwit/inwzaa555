@@ -17,6 +17,9 @@ const chakra = Chakra_Petch({
   display: 'swap',
 });
 
+// Co-locate Vercel functions with Supabase (ap-southeast-1 = Singapore)
+export const preferredRegion = 'sin1'
+
 export const metadata: Metadata = {
   title: 'inwzaa555',
   description: 'A very serious financial system for the Rich Boys 2D1N trip.',

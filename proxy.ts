@@ -23,8 +23,11 @@ export async function proxy(request: NextRequest) {
     },
   )
 
-  // Refresh the session — do not add any logic between createServerClient and getUser()
-  await supabase.auth.getUser()
+  // getSession() refreshes the token from the cookie without a network call (unless
+  // the access token is expired, in which case it uses the refresh token).
+  // getUser() (with a server round-trip) is called in lib/auth/server.ts for actual
+  // auth enforcement — no need to pay for it twice per request here.
+  await supabase.auth.getSession()
 
   return supabaseResponse
 }
