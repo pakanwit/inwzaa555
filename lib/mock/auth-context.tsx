@@ -21,16 +21,29 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setCurrentUserId(localStorage.getItem(ACTIVE_USER_KEY));
-    setHydrated(true);
+    try {
+      setCurrentUserId(localStorage.getItem(ACTIVE_USER_KEY));
+    } catch (err) {
+      console.warn('localStorage unavailable, continuing without persisted session', err);
+    } finally {
+      setHydrated(true);
+    }
   }, []);
 
   const signInAs = (id: string) => {
-    localStorage.setItem(ACTIVE_USER_KEY, id);
+    try {
+      localStorage.setItem(ACTIVE_USER_KEY, id);
+    } catch {
+      // Best-effort — fall back to in-memory state only
+    }
     setCurrentUserId(id);
   };
   const signOut = () => {
-    localStorage.removeItem(ACTIVE_USER_KEY);
+    try {
+      localStorage.removeItem(ACTIVE_USER_KEY);
+    } catch {
+      // Best-effort
+    }
     setCurrentUserId(null);
   };
 

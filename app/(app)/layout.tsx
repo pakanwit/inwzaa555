@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { useAuth } from '@/lib/mock/auth-context';
@@ -15,14 +15,24 @@ export default function AppLayout({
 }) {
   const { currentUser, hydrated } = useAuth();
   const router = useRouter();
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Safety net: if the auth provider hasn't reported hydrated after 2s,
+  // assume something blocked it (e.g. mobile Safari localStorage quirk)
+  // and force the signed-out UI so the user can manually navigate.
+  useEffect(() => {
+    if (hydrated) return;
+    const t = setTimeout(() => setTimedOut(true), 2000);
+    return () => clearTimeout(t);
+  }, [hydrated]);
 
   useEffect(() => {
-    if (hydrated && !currentUser) {
+    if ((hydrated || timedOut) && !currentUser) {
       router.replace('/login');
     }
-  }, [hydrated, currentUser, router]);
+  }, [hydrated, timedOut, currentUser, router]);
 
-  if (!hydrated) {
+  if (!hydrated && !timedOut) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
         <Spinner label="Loading TripKitty…" />
