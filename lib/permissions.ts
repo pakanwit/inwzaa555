@@ -1,4 +1,4 @@
-import type { User, Expense, Contribution } from './mock/types';
+import type { User, Expense, Contribution } from './types';
 
 export type Action =
   | 'expense.create.fromPot'

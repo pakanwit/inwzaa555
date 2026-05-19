@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { can } from './permissions';
-import type { User, Expense, Contribution } from './mock/types';
+import type { User, Expense, Contribution } from './types';
 
 const admin: User = {
   id: 'A', email: 'a@x', displayName: 'A', role: 'admin',

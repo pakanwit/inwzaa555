@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeBalances } from './balance';
-import type { Contribution, Expense, User } from './mock/types';
+import type { Contribution, Expense, User } from './types';
 
 const u = (id: string, role: 'admin' | 'member' = 'member'): User => ({
   id,

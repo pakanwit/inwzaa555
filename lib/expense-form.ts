@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ExpenseCategory, User } from './mock/types';
+import type { ExpenseCategory, User } from './types';
 import { parseBahtInput } from './money';
 
 export const expenseFormSchema = z.object({

@@ -1,0 +1,3 @@
+# Soft-remove sets `removed_at` before calling `auth.admin.deleteUser`
+
+Member removal does two things: write `removed_at` to our `users` table, then call Supabase's `auth.admin.deleteUser`. These are ordered deliberately. Setting `removed_at` first means every subsequent server action immediately rejects the member (our `getUser()` helper checks `removedAt` before returning). `auth.admin.deleteUser` is called second and treated as best-effort — if it fails, the member is already locked out by our check; log the error and let the admin retry manually. The reverse order is unsafe: if `deleteUser` succeeds but our DB write fails, the member's existing session would still be accepted by server actions.

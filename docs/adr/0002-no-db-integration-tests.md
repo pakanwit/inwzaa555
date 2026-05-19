@@ -1,0 +1,3 @@
+# No DB-layer integration tests; unit + E2E only
+
+The spec called for integration tests running Drizzle queries against a local Supabase with RLS enabled. We dropped local Supabase (single shared remote project), so that fixture environment no longer exists. For a private one-trip app used by ~10 people over 2 days, the risk doesn't justify provisioning a dedicated test project. The permission matrix is fully covered by unit tests in `lib/permissions.ts` (server actions call the same `can()` function). End-to-end Playwright tests cover the critical paths end-to-end. Accept the gap: a bug in how a server action calls `can()` with wrong arguments would not be caught until E2E or manual testing.

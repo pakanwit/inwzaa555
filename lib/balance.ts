@@ -1,4 +1,4 @@
-import type { Contribution, Expense, User, UserId } from './mock/types';
+import type { Contribution, Expense, User, UserId } from './types';
 
 export type PerUserBalance = {
   contributed: number;

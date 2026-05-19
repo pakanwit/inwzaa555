@@ -29,7 +29,7 @@ A private web app for a 2-day-1-night trip with a small group of friends. Tracks
 | Styling | Tailwind CSS + hand-rolled Y2K component library (no shadcn, no 98.css) |
 | Forms | React Hook Form + Zod |
 | Money | Stored as integer cents (BIGINT), single currency THB in v1 |
-| Admin bootstrap | `ADMIN_EMAILS` env var — comma-separated list. First sign-in syncs the user into `users` table with `role='admin'` if email matches, else `role='member'`. |
+| Admin bootstrap | First sign-in always creates a `users` row with `role='member'`. First admin is bootstrapped by editing `role` directly in the Supabase Table Editor. After that, promote/demote via the Members page. |
 
 ## 4. Data Model
 
@@ -160,7 +160,7 @@ Rule of thumb: **members own their own evidence; admins own the group.**
 
 1. Admin opens the Supabase Dashboard → Authentication → Users → "Add user" → enters the friend's email (placeholder OK if Supabase generates the invite link instead of emailing it). Sets `user_metadata.display_name` while creating.
 2. **Either** Supabase emails the invite link automatically (if the email is real), **or** the admin grabs a fresh magic link from the Members page in our app, which calls the Supabase Admin API (`auth.admin.generateLink({ type: 'magiclink', email })`) and copies it to the clipboard for sharing on Line/WhatsApp.
-3. Friend opens the link → lands on `/auth/callback` → session created → our callback handler upserts a `users` row using the email's match against `ADMIN_EMAILS` to decide the role → redirect to `/`.
+3. Friend opens the link → lands on `/auth/callback` → session created → our callback handler inserts a `users` row with `role='member'` and `display_name` from `user_metadata.display_name` (fallback: email prefix) if none exists → redirect to `/`.
 4. Subsequent visits: the friend's device already has a Supabase session (default ~1-year refresh token) — they go straight to `/`. No login form, no email entry.
 5. To kick someone out, admin sets `removed_at` (soft-remove) AND calls `auth.admin.deleteUser(id)` to revoke their Supabase session. Their ledger history stays intact.
 
@@ -252,7 +252,7 @@ the-rich-boys/
 
 **Migrations:** Drizzle generates SQL into `drizzle/`. Applied to the remote project via the **Supabase MCP** (`apply_migration` tool) during development, and via `supabase db push` from CI for repeatable deployments. Every migration is committed to git.
 
-**Pre-trip cutover:** before sharing the app with the friend group, run a cleanup migration / seed script to wipe test data, then provision the real admin emails into Supabase Auth via the dashboard.
+**Pre-trip cutover:** before sharing the app with the friend group, run a cleanup migration / seed script to wipe test data, then create real users in Supabase Auth via the dashboard and set the first admin's role directly in the Table Editor.
 
 **Env-var contract:**
 ```
@@ -261,7 +261,6 @@ NEXT_PUBLIC_SUPABASE_URL=https://spcppkmqhvjcwhayeldt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/publishable key>
 SUPABASE_SERVICE_ROLE_KEY=<service role key>            # server-only, never exposed
 DATABASE_URL=postgresql://postgres:<password>@db.spcppkmqhvjcwhayeldt.supabase.co:5432/postgres
-ADMIN_EMAILS=<comma-separated admin emails>
 ```
 
 **Service role key safety:** only used inside server actions / API routes for admin operations (issuing magic links, deleting users). Never imported into a client component. Vercel will warn if it leaks.
@@ -300,7 +299,7 @@ Listed explicitly to prevent scope creep:
 
 - **Trip count:** single hardcoded trip in v1; no `trips` table
 - **Auth method:** Supabase Auth magic link; users provisioned by admin via Supabase Dashboard or Members page (`auth.admin.generateLink`); no custom invite_tokens, no public sign-up, no email entry on the friend's side after first link tap
-- **Initial admins:** comma-separated `ADMIN_EMAILS` env var; checked on first sign-in to assign role
+- **Initial admins:** all users sign in as `member` by default; first admin is bootstrapped by editing `role` directly in the Supabase Table Editor; no `ADMIN_EMAILS` env var
 - **Multiple admins:** supported from day one (no role-count limits)
 - **Split logic:** equal share, implicit, computed from total ÷ member_count
 - **UI base:** fully hand-rolled Y2K theme, no 98.css or shadcn
