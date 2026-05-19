@@ -1,16 +1,10 @@
-'use client';
-import Link from 'next/link';
-import { Button } from '@/components/y2k/button';
-import { ContributionRow } from '@/components/features/contribution-row';
-import { useMockStore } from '@/lib/mock/store';
+import { listContributions } from '@/lib/actions/contributions'
+import { ContributionRow } from '@/components/features/contribution-row'
+import { Button } from '@/components/y2k/button'
+import Link from 'next/link'
 
-export default function ContributionsPage() {
-  const users = useMockStore((s) => s.users);
-  const contributions = useMockStore((s) => s.contributions);
-  const sorted = [...contributions].sort((a, b) =>
-    b.contributedAt.localeCompare(a.contributedAt),
-  );
-
+export default async function ContributionsPage() {
+  const { contributions, users } = await listContributions()
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
@@ -20,14 +14,18 @@ export default function ContributionsPage() {
         </Link>
       </div>
       <ul className="space-y-1">
-        {sorted.map((c) => (
-          <ContributionRow
-            key={c.id}
-            contribution={c}
-            user={users.find((u) => u.id === c.userId)}
-          />
-        ))}
+        {contributions.length === 0 ? (
+          <li className="text-xs">No contributions yet.</li>
+        ) : (
+          contributions.map((c) => (
+            <ContributionRow
+              key={c.id}
+              contribution={c}
+              user={users.find((u) => u.id === c.userId)}
+            />
+          ))
+        )}
       </ul>
     </div>
-  );
+  )
 }

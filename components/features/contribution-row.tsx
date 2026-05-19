@@ -1,5 +1,5 @@
 import { formatBaht } from '@/lib/money';
-import type { Contribution, User } from '@/lib/mock/types';
+import type { Contribution, User } from '@/lib/types'
 
 export function ContributionRow({
   contribution,
