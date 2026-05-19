@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -29,7 +30,7 @@ export async function createSupabaseServerClient() {
   )
 }
 
-export async function getUser(): Promise<User> {
+export const getUser = cache(async (): Promise<User> => {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user: authUser },
@@ -54,4 +55,4 @@ export async function getUser(): Promise<User> {
     removedAt: undefined,
     createdAt: row.createdAt.toISOString(),
   }
-}
+})
