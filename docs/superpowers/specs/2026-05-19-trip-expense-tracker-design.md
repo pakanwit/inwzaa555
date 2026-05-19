@@ -108,7 +108,7 @@ for each user u:
 `net_position > 0` → member has money coming back to them at trip end.
 `net_position < 0` → member owes the pot at trip end.
 
-These derived values are computed in a single SQL view `v_balances` rather than stored.
+These derived values are computed in `lib/balance.ts` — a pure TypeScript function called server-side — rather than a SQL view. See `docs/adr/0001-balance-computation-in-typescript.md`.
 
 ## 6. Pages
 
@@ -160,7 +160,7 @@ Rule of thumb: **members own their own evidence; admins own the group.**
 
 1. Admin opens the Supabase Dashboard → Authentication → Users → "Add user" → enters the friend's email (placeholder OK if Supabase generates the invite link instead of emailing it). Sets `user_metadata.display_name` while creating.
 2. **Either** Supabase emails the invite link automatically (if the email is real), **or** the admin grabs a fresh magic link from the Members page in our app, which calls the Supabase Admin API (`auth.admin.generateLink({ type: 'magiclink', email })`) and copies it to the clipboard for sharing on Line/WhatsApp.
-3. Friend opens the link → lands on `/auth/callback` → session created → our callback handler inserts a `users` row with `role='member'` and `display_name` from `user_metadata.display_name` (fallback: email prefix) if none exists → redirect to `/`.
+3. Friend opens the link → lands on `/auth/callback` → session created → our callback handler inserts a `users` row with `role='member'` and `display_name` from `user_metadata.display_name` (fallback: email prefix) if none exists → redirect to `/`. **Note:** a Postgres trigger `on_auth_user_created` also creates the `users` row immediately when the admin adds the user via the Dashboard (`migration: manual_0001_auth_user_trigger.sql`), so the row typically exists before the first sign-in.
 4. Subsequent visits: the friend's device already has a Supabase session (default ~1-year refresh token) — they go straight to `/`. No login form, no email entry.
 5. To kick someone out, admin sets `removed_at` (soft-remove) AND calls `auth.admin.deleteUser(id)` to revoke their Supabase session. Their ledger history stays intact.
 
@@ -260,7 +260,7 @@ the-rich-boys/
 NEXT_PUBLIC_SUPABASE_URL=https://spcppkmqhvjcwhayeldt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon/publishable key>
 SUPABASE_SERVICE_ROLE_KEY=<service role key>            # server-only, never exposed
-DATABASE_URL=postgresql://postgres:<password>@db.spcppkmqhvjcwhayeldt.supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres.spcppkmqhvjcwhayeldt:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 ```
 
 **Service role key safety:** only used inside server actions / API routes for admin operations (issuing magic links, deleting users). Never imported into a client component. Vercel will warn if it leaks.
@@ -275,11 +275,11 @@ DATABASE_URL=postgresql://postgres:<password>@db.spcppkmqhvjcwhayeldt.supabase.c
 
 ## 12. Testing Strategy
 
-- **Unit:** balance math (`lib/balance.ts`) — pure function, table-driven tests covering empty state, only contributions, only expenses, mixed fronted/reimbursed, integer-division remainder
-- **Integration:** Drizzle queries against a local Supabase, seeded with fixtures, asserting `v_balances` view output
+- **Unit:** balance math (`lib/balance.ts`) and permission matrix (`lib/permissions.ts`) — pure functions, table-driven tests. The full permission matrix (role × action × ownership) is covered here. See `docs/adr/0002-no-db-integration-tests.md` for why DB-layer integration tests were dropped.
 - **Component:** Y2K components render with correct ARIA roles and keyboard focus
-- **Permission tests:** dedicated suite asserting the permission matrix from §7 — for each (role × action × ownership) combination, server action must allow or reject correctly. Run against test DB with RLS enabled to verify both layers.
-- **E2E (Playwright, smoke only):** invite-link → sign-in flow, add-expense flow, mark-reimbursed flow, attempt-edit-others-expense-as-member (must fail) on mobile + desktop viewports
+- **E2E (Playwright, smoke only):** sign-in (email+password) flow, add-expense flow, mark-reimbursed flow, attempt-edit-others-expense-as-member (must fail) on mobile + desktop viewports
+
+*Note: invite-link flow removed from E2E — users sign in with email+password after first provisioning.*
 
 ## 13. Out of Scope for v1
 
@@ -298,7 +298,7 @@ Listed explicitly to prevent scope creep:
 ## 14. Open Questions Resolved
 
 - **Trip count:** single hardcoded trip in v1; no `trips` table
-- **Auth method:** Supabase Auth magic link; users provisioned by admin via Supabase Dashboard or Members page (`auth.admin.generateLink`); no custom invite_tokens, no public sign-up, no email entry on the friend's side after first link tap
+- **Auth method:** Supabase Auth. Admin creates users via Dashboard (auto-confirm email). Users sign in with **email + password** (see `docs/adr/0005-login-email-password.md`). Magic links can still be generated from the Members page via `auth.admin.generateLink` for initial onboarding. No custom invite_tokens, no public sign-up.
 - **Initial admins:** all users sign in as `member` by default; first admin is bootstrapped by editing `role` directly in the Supabase Table Editor; no `ADMIN_EMAILS` env var
 - **Multiple admins:** supported from day one (no role-count limits)
 - **Split logic:** equal share, implicit, computed from total ÷ member_count
@@ -306,4 +306,7 @@ Listed explicitly to prevent scope creep:
 - **Currency:** THB only, stored as integer cents
 - **Member removal:** soft-delete (`removed_at`) on our users table + `auth.admin.deleteUser` to revoke Supabase session
 - **Project name:** `inwzaa555`
+- **User provisioning:** a Postgres trigger `on_auth_user_created` auto-creates the `public.users` row the moment an admin adds a user in the Supabase Dashboard. The `/auth/callback` handler also upserts on first sign-in as a safety net. See `docs/adr/0006-trigger-based-user-provisioning.md`.
+- **Balance computation:** computed in TypeScript (`lib/balance.ts`), not a SQL view. See `docs/adr/0001-balance-computation-in-typescript.md`.
+- **DB connection:** Drizzle uses the Supabase session pooler (port 5432, `aws-0-ap-southeast-1.pooler.supabase.com`) for Vercel serverless compatibility.
 - **Dev/prod DBs:** single remote Supabase project (`spcppkmqhvjcwhayeldt`) used for local dev, Vercel preview, and Vercel production in v1. Pre-trip cleanup planned. Local Docker setup skipped to save friction; can split later if isolation becomes needed.
