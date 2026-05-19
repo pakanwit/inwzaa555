@@ -24,7 +24,7 @@ export function useCurrentUser(): User | null {
 
       const { data: row } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, display_name, avatar_url, role, removed_at, created_at')
         .eq('id', authUser.id)
         .single()
 
@@ -37,7 +37,7 @@ export function useCurrentUser(): User | null {
         avatarUrl: row.avatar_url ?? undefined,
         role: row.role as 'admin' | 'member',
         removedAt: row.removed_at ?? undefined,
-        createdAt: row.created_at,
+        createdAt: row.created_at as string,
       })
     }
 
