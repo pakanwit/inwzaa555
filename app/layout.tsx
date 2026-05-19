@@ -1,19 +1,19 @@
 import type { Metadata } from 'next';
-import { VT323, Orbitron } from 'next/font/google';
+import { Audiowide, Chakra_Petch } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const vt323 = VT323({
+const audiowide = Audiowide({
   subsets: ['latin'],
   weight: '400',
-  variable: '--font-vt323',
+  variable: '--font-audiowide',
   display: 'swap',
 });
 
-const orbitron = Orbitron({
+const chakra = Chakra_Petch({
   subsets: ['latin'],
-  weight: ['500', '700', '900'],
-  variable: '--font-orbitron',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-chakra',
   display: 'swap',
 });
 
@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${vt323.variable} ${orbitron.variable}`}>
+    <html lang="en" className={`${audiowide.variable} ${chakra.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>
