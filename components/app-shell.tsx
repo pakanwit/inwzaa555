@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="bevel-out bg-y2k-chrome-200 px-2 py-1 flex flex-wrap gap-1 items-center"
         aria-label="Primary"
       >
-        <strong className="mr-2">Trip Kitty</strong>
+        <strong className="mr-2">inwzaa555</strong>
         {NAV.map((n) => {
           const active = pathname === n.href;
           return (

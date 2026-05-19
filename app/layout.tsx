@@ -18,8 +18,8 @@ const chakra = Chakra_Petch({
 });
 
 export const metadata: Metadata = {
-  title: 'The Rich Boys — Trip Kitty',
-  description: 'A very serious financial system for a 2D1N trip.',
+  title: 'inwzaa555',
+  description: 'A very serious financial system for the Rich Boys 2D1N trip.',
 };
 
 export default function RootLayout({
