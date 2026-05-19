@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>inwzaa555 — Design Spec</title>
+<style>
+  :root {
+    --chrome-50:  #f7f7f7;
+    --chrome-100: #efefef;
+    --chrome-200: #dfdfdf;
+    --chrome-300: #b8b8b8;
+    --chrome-700: #404040;
+    --chrome-900: #1a1a1a;
+    --blue: #0048d6;
+    --blue-dark: #002a82;
+    --magenta: #ff00c8;
+    --lime: #9fff00;
+    --highlighter: #fffa3d;
+    --paper: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--chrome-100);
+    color: var(--chrome-900);
+    font-family: "Trebuchet MS", Verdana, Geneva, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  main {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 24px 24px 80px;
+  }
+  header.doc {
+    background: var(--paper);
+    border: 1px solid var(--chrome-300);
+    border-top: 4px solid var(--blue);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.08);
+  }
+  header.doc h1 {
+    margin: 0 0 8px;
+    font-family: "Audiowide", "Trebuchet MS", sans-serif;
+    letter-spacing: 0.04em;
+    font-size: 28px;
+    color: var(--blue-dark);
+  }
+  header.doc .meta {
+    font-size: 13px;
+    color: var(--chrome-700);
+  }
+  header.doc .meta strong { color: var(--chrome-900); }
+  nav.toc {
+    background: var(--paper);
+    border: 1px solid var(--chrome-300);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  nav.toc h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--chrome-700);
+  }
+  nav.toc ol {
+    margin: 0;
+    padding-left: 20px;
+    columns: 2;
+    column-gap: 24px;
+  }
+  nav.toc li { margin: 2px 0; break-inside: avoid; }
+  nav.toc a { color: var(--blue); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section {
+    background: var(--paper);
+    border: 1px solid var(--chrome-300);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-family: "Audiowide", "Trebuchet MS", sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.03em;
+    margin: 0 0 12px;
+    color: var(--blue-dark);
+    border-bottom: 2px solid var(--chrome-200);
+    padding-bottom: 6px;
+  }
+  h3 {
+    font-size: 15px;
+    margin: 20px 0 8px;
+    color: var(--chrome-900);
+  }
+  p, ul, ol { margin: 0 0 12px; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; }
+  strong { color: var(--chrome-900); }
+  em { font-style: italic; }
+  code {
+    font-family: "JetBrains Mono", "Courier New", Courier, monospace;
+    background: var(--chrome-100);
+    border: 1px solid var(--chrome-200);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--chrome-50);
+    border: 1px solid var(--chrome-300);
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: "JetBrains Mono", "Courier New", Courier, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0 16px;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--chrome-300);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: linear-gradient(180deg, var(--chrome-100) 0%, var(--chrome-200) 100%);
+    color: var(--chrome-900);
+    font-weight: 600;
+  }
+  tr:nth-child(even) td { background: var(--chrome-50); }
+  a { color: var(--blue); }
+  blockquote {
+    margin: 12px 0;
+    padding: 8px 14px;
+    border-left: 4px solid var(--highlighter);
+    background: #fffce0;
+  }
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: var(--highlighter);
+    color: var(--chrome-900);
+    border: 1px solid var(--chrome-700);
+  }
+  .pill.draft { background: var(--lime); }
+  hr {
+    border: none;
+    border-top: 1px dashed var(--chrome-300);
+    margin: 16px 0;
+  }
+  @media (max-width: 640px) {
+    main { padding: 12px 12px 60px; }
+    nav.toc ol { columns: 1; }
+    table { font-size: 13px; }
+    th, td { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="doc">
+  <h1>inwzaa555 — Design Spec</h1>
+  <div class="meta">
+    <p><strong>Date:</strong> 2026-05-19 &nbsp;&middot;&nbsp;
+       <strong>Author:</strong> Pakanwit (with Claude) &nbsp;&middot;&nbsp;
+       <strong>Status:</strong> <span class="pill draft">Draft, pending approval</span></p>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Table of contents</h2>
+  <ol>
+    <li><a href="#s1">Purpose</a></li>
+    <li><a href="#s2">Mental Model: Shared Kitty</a></li>
+    <li><a href="#s3">Stack</a></li>
+    <li><a href="#s4">Data Model</a></li>
+    <li><a href="#s5">Balance Math</a></li>
+    <li><a href="#s6">Pages</a></li>
+    <li><a href="#s7">Roles, Permissions &amp; Access</a></li>
+    <li><a href="#s8">Image Storage</a></li>
+    <li><a href="#s9">Y2K Visual Theme</a></li>
+    <li><a href="#s10">Project Structure</a></li>
+    <li><a href="#s10a">Environments &amp; Migrations</a></li>
+    <li><a href="#s11">Error Handling</a></li>
+    <li><a href="#s12">Testing Strategy</a></li>
+    <li><a href="#s13">Out of Scope for v1</a></li>
+    <li><a href="#s14">Open Questions Resolved</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <h2>1. Purpose</h2>
+  <p>A private web app for a 2-day-1-night trip with a small group of friends. Tracks a shared cash kitty, lets members log expenses (from pot or out-of-pocket), uploads receipt photos, and shows who is owed how much. Y2K visual theme. Mobile + desktop responsive. Friends-only access.</p>
+</section>
+
+<section id="s2">
+  <h2>2. Mental Model: Shared Kitty</h2>
+  <ul>
+    <li>Each member contributes an amount (e.g., 2000 baht) to a <strong>central pot</strong></li>
+    <li>Expenses are paid <strong>from the pot</strong> by default</li>
+    <li>If a member pays <strong>out-of-pocket</strong> (because the pot didn't have cash on hand), the expense is <strong>fronted</strong> and that member is owed reimbursement from the pot</li>
+    <li>"Reimbursement" is marked as a single boolean state on the expense — when set, the pot has paid that member back</li>
+    <li>Fair share = total expenses &divide; member count (equal split, no custom shares in v1)</li>
+  </ul>
+</section>
+
+<section id="s3">
+  <h2>3. Stack</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Choice</th></tr></thead>
+    <tbody>
+      <tr><td>Framework</td><td>Next.js 16 App Router</td></tr>
+      <tr><td>Hosting</td><td>Vercel (Fluid Compute)</td></tr>
+      <tr><td>Auth</td><td>Supabase Auth — <strong>admin-provisioned users</strong> (no public sign-up); friend lands signed in via emailed/copied magic link; never types email after that</td></tr>
+      <tr><td>DB</td><td>Supabase Postgres (project ref <code>spcppkmqhvjcwhayeldt</code>)</td></tr>
+      <tr><td>ORM</td><td>Drizzle</td></tr>
+      <tr><td>Storage</td><td>Supabase Storage (private bucket <code>receipts</code>, RLS-gated)</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS + hand-rolled Y2K component library (no shadcn, no 98.css)</td></tr>
+      <tr><td>Forms</td><td>React Hook Form + Zod</td></tr>
+      <tr><td>Money</td><td>Stored as integer cents (BIGINT), single currency THB in v1</td></tr>
+      <tr><td>Admin bootstrap</td><td><code>ADMIN_EMAILS</code> env var — comma-separated list. First sign-in syncs the user into <code>users</code> table with <code>role='admin'</code> if email matches, else <code>role='member'</code>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s4">
+  <h2>4. Data Model</h2>
+<pre><code>-- Note: Supabase manages auth.users automatically. The users table below
+-- is OUR application-level profile, joined 1:1 with auth.users by id.
+
+users (
+  id            uuid PK references auth.users(id) on delete cascade
+  email         text unique not null     -- mirrored from auth.users for display in members page
+  display_name  text not null
+  avatar_url    text
+  role          text not null default 'member'
+                  check (role in ('admin','member'))
+  removed_at    timestamptz       -- soft-remove: can't sign in (we revoke their auth.users session), but history preserved
+  created_at    timestamptz default now()
+)
+
+-- invite_tokens table dropped — Supabase Auth's built-in invite mechanism
+-- (admin generates magic links via the Admin API) replaces it entirely.
+
+contributions (
+  id              uuid PK
+  user_id         uuid references users(id)
+  amount_cents    bigint not null check (amount_cents &gt; 0)
+  contributed_at  timestamptz not null
+  note            text
+  created_by      uuid references users(id)
+  created_at      timestamptz default now()
+)
+
+expenses (
+  id                  uuid PK
+  amount_cents        bigint not null check (amount_cents &gt; 0)
+  description         text not null
+  category            text  -- 'food', 'transport', 'lodging', 'activity', 'other'
+  occurred_at         timestamptz not null
+  fronted_by_user_id  uuid references users(id)  -- NULL = paid from pot cash
+  reimbursed_at       timestamptz                -- NULL = not yet reimbursed
+  created_by          uuid references users(id) not null
+  created_at          timestamptz default now()
+)
+
+attachments (
+  id            uuid PK
+  parent_type   text not null check (parent_type in ('expense','contribution'))
+  parent_id     uuid not null
+  storage_path  text not null  -- path in supabase storage 'receipts' bucket
+  mime_type     text
+  uploaded_by   uuid references users(id)
+  uploaded_at   timestamptz default now()
+)</code></pre>
+  <p><strong>Indices:</strong> <code>expenses(occurred_at desc)</code>, <code>expenses(fronted_by_user_id) where reimbursed_at is null</code>, <code>contributions(user_id)</code>, <code>attachments(parent_type, parent_id)</code>.</p>
+  <p><strong>Row Level Security:</strong> every table requires the requesting user to exist in <code>users</code> with <code>removed_at IS NULL</code>. Write permissions are scoped by role + ownership — see <a href="#s7">§7</a>.</p>
+</section>
+
+<section id="s5">
+  <h2>5. Balance Math</h2>
+<pre><code>pot_total      = Σ contributions.amount_cents
+pot_spent      = Σ expenses where fronted_by_user_id IS NULL
+               + Σ expenses where reimbursed_at IS NOT NULL
+pot_remaining  = pot_total − pot_spent
+
+total_expenses = Σ all expenses.amount_cents
+fair_share     = total_expenses / member_count   (integer division; remainder absorbed by pot)
+
+for each user u:
+  contributed        = Σ contributions where user_id = u
+  owed_unsettled     = Σ expenses where fronted_by_user_id = u AND reimbursed_at IS NULL
+  net_position       = contributed + owed_unsettled − fair_share</code></pre>
+  <p><code>net_position &gt; 0</code> → member has money coming back to them at trip end.<br>
+     <code>net_position &lt; 0</code> → member owes the pot at trip end.</p>
+  <p>These derived values are computed in a single SQL view <code>v_balances</code> rather than stored.</p>
+</section>
+
+<section id="s6">
+  <h2>6. Pages</h2>
+  <table>
+    <thead><tr><th>Route</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>/login</code></td><td>Renders a "tap to sign in" page when the user lands here without a Supabase session — primary purpose is to provide a fallback if a magic link expires; new users normally never visit this route.</td></tr>
+      <tr><td><code>/auth/callback</code></td><td>Supabase magic-link callback handler. Exchanges the <code>code</code> query param for a session, ensures a <code>users</code> row exists (creates it with role from <code>ADMIN_EMAILS</code> allowlist on first sign-in), redirects to <code>/</code>.</td></tr>
+      <tr><td><code>/</code></td><td><strong>Dashboard.</strong> Pot total + remaining (big), suggested settlements ("Alice is owed ฿3,000"), recent expense feed (10 items), quick-add buttons.</td></tr>
+      <tr><td><code>/expenses</code></td><td>Full expense list. Filter by category, payer, reimbursement status.</td></tr>
+      <tr><td><code>/expenses/new</code></td><td>Add expense form: amount, description, category, occurred_at, paid_by (pot / me / other member), optional photo upload.</td></tr>
+      <tr><td><code>/expenses/[id]</code></td><td>Detail: receipt fullscreen viewer, edit, delete, "Mark reimbursed" button (if fronted &amp; unsettled).</td></tr>
+      <tr><td><code>/contributions</code></td><td>List all contributions.</td></tr>
+      <tr><td><code>/contributions/new</code></td><td>Add contribution form: who (self for members, anyone for admins), amount, when, optional transfer-screenshot upload.</td></tr>
+      <tr><td><code>/members</code></td><td>Roster with role badges. Admin-only controls: "Copy magic link" (calls Supabase Admin API to generate a fresh link for that user), soft-remove member, promote/demote. Members see read-only roster.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s7">
+  <h2>7. Roles, Permissions &amp; Access</h2>
+  <h3>Roles</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Granted at</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>admin</code></td><td>On first sign-in, the user's email is checked against the <code>ADMIN_EMAILS</code> env allowlist; if it matches, the new <code>users</code> row is created with <code>role='admin'</code>. After bootstrap, admins promote/demote others via the Members page.</td><td>Cannot demote yourself if you are the last admin.</td></tr>
+      <tr><td><code>member</code></td><td>Default for everyone whose email isn't in <code>ADMIN_EMAILS</code> on first sign-in.</td><td></td></tr>
+    </tbody>
+  </table>
+  <p>A user with <code>removed_at IS NOT NULL</code> is <strong>soft-removed</strong>: cannot sign in, cannot mutate anything, but their expense/contribution history stays in the ledger (so balances remain correct).</p>
+
+  <h3>Permission matrix</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Member</th><th>Admin</th></tr></thead>
+    <tbody>
+      <tr><td>View dashboard, balances, expenses, contributions</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Create expense fronted by <strong>self</strong> (with receipt)</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Create expense paid from pot (no fronter)</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Create expense fronted by <strong>another</strong> member</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Update/delete <strong>own</strong> expense (while not reimbursed)</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Update/delete <strong>another member's</strong> expense</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Mark expense reimbursed</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Create <strong>own</strong> contribution (with transfer evidence)</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Update/delete <strong>own</strong> contribution</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Update/delete <strong>another member's</strong> contribution</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Upload/delete attachments on records they can edit</td><td>✅ (own records only)</td><td>✅ (any)</td></tr>
+      <tr><td>Generate / revoke invite link</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Remove member (soft)</td><td>❌</td><td>✅</td></tr>
+      <tr><td>Promote member → admin, demote admin → member</td><td>❌</td><td>✅</td></tr>
+    </tbody>
+  </table>
+  <blockquote>Rule of thumb: <strong>members own their own evidence; admins own the group.</strong></blockquote>
+
+  <h3>Onboarding flow (revised — admin-provisioned via Supabase Auth)</h3>
+  <ol>
+    <li>Admin opens the Supabase Dashboard → Authentication → Users → "Add user" → enters the friend's email (placeholder OK if Supabase generates the invite link instead of emailing it). Sets <code>user_metadata.display_name</code> while creating.</li>
+    <li><strong>Either</strong> Supabase emails the invite link automatically (if the email is real), <strong>or</strong> the admin grabs a fresh magic link from the Members page in our app, which calls the Supabase Admin API (<code>auth.admin.generateLink({ type: 'magiclink', email })</code>) and copies it to the clipboard for sharing on Line/WhatsApp.</li>
+    <li>Friend opens the link → lands on <code>/auth/callback</code> → session created → our callback handler upserts a <code>users</code> row using the email's match against <code>ADMIN_EMAILS</code> to decide the role → redirect to <code>/</code>.</li>
+    <li>Subsequent visits: the friend's device already has a Supabase session (default ~1-year refresh token) — they go straight to <code>/</code>. No login form, no email entry.</li>
+    <li>To kick someone out, admin sets <code>removed_at</code> (soft-remove) AND calls <code>auth.admin.deleteUser(id)</code> to revoke their Supabase session. Their ledger history stays intact.</li>
+  </ol>
+
+  <h3>Enforcement</h3>
+  <ul>
+    <li><strong>Server actions</strong> are the only mutation path. Every action runs a permission check helper (<code>requireAdmin()</code>, <code>requireOwnerOrAdmin(record)</code>) before touching the DB. No client-side trust.</li>
+    <li><strong>Supabase RLS</strong> policies enforce the same rules at the DB layer as defense-in-depth (e.g., <code>UPDATE expenses</code> allowed when <code>auth.uid() = created_by OR auth.uid() IN (SELECT id FROM users WHERE role='admin')</code>).</li>
+    <li><strong>No public sign-up route.</strong> New users only exist if an admin creates them in the Supabase dashboard or via our Members page (which proxies to the Supabase Admin API behind an admin-only server action).</li>
+  </ul>
+</section>
+
+<section id="s8">
+  <h2>8. Image Storage</h2>
+  <ul>
+    <li>Bucket: <code>receipts</code>, private</li>
+    <li>Path convention: <code>{parent_type}/{parent_id}/{uuid}.{ext}</code></li>
+    <li>Upload: client gets a signed upload URL from a server action, uploads directly to Supabase Storage, then writes a row to <code>attachments</code></li>
+    <li>Read: signed download URL with 1-hour TTL, generated server-side per request</li>
+    <li>Max 5MB per image, accepted MIME: <code>image/jpeg</code>, <code>image/png</code>, <code>image/webp</code>, <code>image/heic</code></li>
+    <li>Thumbnails generated on-the-fly via Supabase image transformation (<code>?width=400&amp;height=400&amp;resize=cover</code>)</li>
+  </ul>
+</section>
+
+<section id="s9">
+  <h2>9. Y2K Visual Theme</h2>
+  <h3>Aesthetic anchors</h3>
+  <ul>
+    <li>Chrome/silver gradient surfaces, beveled borders (light top/left, dark bottom/right)</li>
+    <li>"Window" containers with title bars, fake min/max/close buttons in the corner</li>
+    <li>Glossy "Aqua-style" highlights on primary action buttons</li>
+    <li>System fonts: <code>Tahoma, "MS Sans Serif", Verdana, Arial, sans-serif</code></li>
+    <li>Bright accent colors: hot blue (#0048D6), lime (#9FFF00), magenta (#FF00C8), highlighter yellow (#FFFA3D)</li>
+    <li>Underlined blue links</li>
+    <li>Status-bar footer with a faux clock</li>
+    <li>Subtle dotted-focus rings (not modern blue outlines)</li>
+    <li>Sparingly: animated GIFs, a <code>&lt;marquee&gt;</code> for the "trip kitty" header</li>
+  </ul>
+
+  <h3>Component library (hand-rolled in <code>components/y2k/</code>)</h3>
+  <ul>
+    <li><code>Window</code> — title-bar + body container</li>
+    <li><code>Fieldset</code> — labeled bordered group</li>
+    <li><code>Button</code> — beveled, three variants (default, primary glossy, danger)</li>
+    <li><code>TextInput</code>, <code>Select</code>, <code>Textarea</code> — inset bevel, white background</li>
+    <li><code>StatusBar</code> — bottom footer</li>
+    <li><code>Tabs</code> — folder-tab look</li>
+    <li><code>Dialog</code> — modal window with title bar</li>
+    <li><code>Spinner</code> — animated hourglass GIF or pixel-style spinner</li>
+    <li><code>Marquee</code> — wraps native <code>&lt;marquee&gt;</code> with React props</li>
+    <li><code>ImageThumb</code> — beveled frame around image with hover zoom</li>
+  </ul>
+
+  <h3>Responsive strategy</h3>
+  <ul>
+    <li>Desktop (<code>&gt;= 768px</code>): windows render with fixed max-width, centered, drop-shadow, faux title bar</li>
+    <li>Mobile (<code>&lt; 768px</code>): windows fill the viewport edge-to-edge, title bar becomes the page header, no drop shadow</li>
+    <li>Tap targets ≥ 44×44px on mobile</li>
+    <li>Forms stack vertically on mobile; two-column on desktop where helpful</li>
+  </ul>
+
+  <h3>No dark mode.</h3>
+</section>
+
+<section id="s10">
+  <h2>10. Project Structure</h2>
+<pre><code>inwzaa555/
+├── app/
+│   ├── (auth)/login/page.tsx
+│   ├── (app)/
+│   │   ├── layout.tsx              # auth guard + nav
+│   │   ├── page.tsx                # dashboard
+│   │   ├── expenses/
+│   │   ├── contributions/
+│   │   └── members/
+│   └── api/                        # signed-upload endpoints
+├── components/
+│   ├── y2k/                        # Y2K component library
+│   └── features/                   # expense card, balance widget, etc.
+├── lib/
+│   ├── db/                         # drizzle schema + client
+│   ├── auth/                       # supabase server/client helpers
+│   ├── storage/                    # signed URL helpers
+│   └── money.ts                    # cents &lt;-&gt; baht formatting
+├── drizzle/                        # generated migrations
+├── public/y2k/                     # GIFs, sound effects, cursor
+└── docs/superpowers/specs/</code></pre>
+</section>
+
+<section id="s10a">
+  <h2>10a. Environments &amp; Migrations</h2>
+  <table>
+    <thead><tr><th>Env</th><th>Database</th><th>Auth users</th><th>Storage bucket</th><th>Hosting</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Local dev</strong></td><td>Local Supabase via <code>supabase start</code> (Docker) — free, fully offline</td><td>Test users created by seed script</td><td>Local bucket</td><td><code>npm run dev</code></td></tr>
+      <tr><td><strong>Production</strong></td><td>Supabase project <code>spcppkmqhvjcwhayeldt</code></td><td>Real friends, admin-provisioned</td><td><code>receipts</code> bucket on the prod project</td><td>Vercel deployment, <code>main</code> branch</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Migrations:</strong> Drizzle generates SQL migrations into <code>drizzle/</code>. They are applied to <strong>local</strong> with <code>drizzle-kit push</code> (or <code>drizzle-kit migrate</code> once stable), and to <strong>production</strong> via the Supabase CLI: <code>supabase db push</code> from the linked project. Migrations are committed to git so every environment converges to the same schema.</p>
+  <p><strong>Supabase Branching considered, deferred:</strong> Supabase Branching creates per-git-branch preview databases (auto-wired to Vercel previews) but it's a Pro-plan paid feature (~$0.32/branch/day). For a small private friend-trip app with one developer it's overkill — local Supabase + a single prod project is simpler and free. If we later want PR-preview deploys against a real database, we can opt in by upgrading to Pro and enabling Branching with one click; no schema or code changes required.</p>
+  <p><strong>Env-var contract:</strong></p>
+<pre><code># Local .env.local
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=&lt;local anon key from `supabase status`&gt;
+SUPABASE_SERVICE_ROLE_KEY=&lt;local service role key from `supabase status`&gt;
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+ADMIN_EMAILS=pak@example.com,friend1@example.com,friend2@example.com
+
+# Vercel production env
+NEXT_PUBLIC_SUPABASE_URL=https://spcppkmqhvjcwhayeldt.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=&lt;prod anon key&gt;
+SUPABASE_SERVICE_ROLE_KEY=&lt;prod service role key&gt;          # server-only, never exposed
+DATABASE_URL=postgresql://postgres:&lt;password&gt;@db.spcppkmqhvjcwhayeldt.supabase.co:5432/postgres
+ADMIN_EMAILS=&lt;real admin emails, comma-separated&gt;</code></pre>
+  <p><strong>Service role key safety:</strong> only used inside server actions / API routes for admin operations (issuing magic links, deleting users). Never imported into a client component. Vercel will warn if it leaks.</p>
+</section>
+
+<section id="s11">
+  <h2>11. Error Handling</h2>
+  <ul>
+    <li>Server actions wrap DB calls in try/catch and return discriminated-union results <code>{ ok: true, data } | { ok: false, error }</code></li>
+    <li>Forms display field-level errors from Zod and toast on server errors</li>
+    <li>Image uploads show progress and a clear failure state with retry</li>
+    <li>Unauthorized access redirects to <code>/login</code></li>
+    <li>404 page styled as a "blue screen of death" (Y2K bonus)</li>
+  </ul>
+</section>
+
+<section id="s12">
+  <h2>12. Testing Strategy</h2>
+  <ul>
+    <li><strong>Unit:</strong> balance math (<code>lib/balance.ts</code>) — pure function, table-driven tests covering empty state, only contributions, only expenses, mixed fronted/reimbursed, integer-division remainder</li>
+    <li><strong>Integration:</strong> Drizzle queries against a local Supabase, seeded with fixtures, asserting <code>v_balances</code> view output</li>
+    <li><strong>Component:</strong> Y2K components render with correct ARIA roles and keyboard focus</li>
+    <li><strong>Permission tests:</strong> dedicated suite asserting the permission matrix from <a href="#s7">§7</a> — for each (role × action × ownership) combination, server action must allow or reject correctly. Run against test DB with RLS enabled to verify both layers.</li>
+    <li><strong>E2E (Playwright, smoke only):</strong> invite-link → sign-in flow, add-expense flow, mark-reimbursed flow, attempt-edit-others-expense-as-member (must fail) on mobile + desktop viewports</li>
+  </ul>
+</section>
+
+<section id="s13">
+  <h2>13. Out of Scope for v1</h2>
+  <p>Listed explicitly to prevent scope creep:</p>
+  <ul>
+    <li>Multi-currency (only THB)</li>
+    <li>Multiple trips (schema agnostic, but no UI)</li>
+    <li>Custom split percentages</li>
+    <li>Partial reimbursements</li>
+    <li>Recurring expenses</li>
+    <li>Push notifications / email digests</li>
+    <li>Activity log / edit history</li>
+    <li>CSV export</li>
+    <li>Comments on expenses</li>
+    <li>Dark mode</li>
+  </ul>
+</section>
+
+<section id="s14">
+  <h2>14. Open Questions Resolved</h2>
+  <ul>
+    <li><strong>Trip count:</strong> single hardcoded trip in v1; no <code>trips</code> table</li>
+    <li><strong>Auth method:</strong> Supabase Auth magic link; users provisioned by admin via Supabase Dashboard or Members page (<code>auth.admin.generateLink</code>); no custom invite_tokens, no public sign-up, no email entry on the friend's side after first link tap</li>
+    <li><strong>Initial admins:</strong> comma-separated <code>ADMIN_EMAILS</code> env var; checked on first sign-in to assign role</li>
+    <li><strong>Multiple admins:</strong> supported from day one (no role-count limits)</li>
+    <li><strong>Split logic:</strong> equal share, implicit, computed from total ÷ member_count</li>
+    <li><strong>UI base:</strong> fully hand-rolled Y2K theme, no 98.css or shadcn</li>
+    <li><strong>Currency:</strong> THB only, stored as integer cents</li>
+    <li><strong>Member removal:</strong> soft-delete (<code>removed_at</code>) on our users table + <code>auth.admin.deleteUser</code> to revoke Supabase session</li>
+    <li><strong>Project name:</strong> <code>inwzaa555</code></li>
+    <li><strong>Dev/prod DBs:</strong> local Supabase (<code>supabase start</code>) for dev, the existing prod project for production. Supabase Branching evaluated and deferred (paid feature, overkill for current scale).</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>
