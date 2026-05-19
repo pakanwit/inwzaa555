@@ -1,22 +1,26 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import clsx from 'clsx';
-import { StatusBar } from '@/components/y2k/status-bar';
-import { RoleSwitcher } from '@/components/features/role-switcher';
-import { useAuth } from '@/lib/mock/auth-context';
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import clsx from 'clsx'
+import { StatusBar } from '@/components/y2k/status-bar'
+import type { User } from '@/lib/types'
 
 const NAV = [
   { href: '/', label: 'Home' },
   { href: '/expenses', label: 'Expenses' },
   { href: '/contributions', label: 'Pot' },
   { href: '/members', label: 'Members' },
-];
+]
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useAuth();
-  const pathname = usePathname();
+export function AppShell({
+  children,
+  currentUser,
+}: {
+  children: React.ReactNode
+  currentUser: User
+}) {
+  const pathname = usePathname()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -26,7 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <strong className="mr-2">inwzaa555</strong>
         {NAV.map((n) => {
-          const active = pathname === n.href;
+          const active = pathname === n.href
           return (
             <Link
               key={n.href}
@@ -38,19 +42,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               {n.label}
             </Link>
-          );
+          )
         })}
         <span className="ml-auto text-xs">
-          {currentUser ? `Signed in: ${currentUser.displayName}` : 'Not signed in'}
+          Signed in: {currentUser.displayName}
         </span>
       </nav>
       <main className="flex-1 p-3 md:p-6 max-w-3xl w-full mx-auto">{children}</main>
       <StatusBar className="m-2">
-        {currentUser
-          ? `Hello ${currentUser.displayName} (${currentUser.role})`
-          : 'Use the dev switcher to view as a user'}
+        Hello {currentUser.displayName} ({currentUser.role})
       </StatusBar>
-      <RoleSwitcher />
     </div>
-  );
+  )
 }
