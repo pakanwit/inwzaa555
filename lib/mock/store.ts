@@ -1,7 +1,47 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+
+// Safe storage: returns localStorage if usable, else an in-memory fallback.
+// iOS Safari can throw on localStorage access in private mode / restrictive
+// settings, which would otherwise crash the module on import.
+function makeSafeStorage(): Storage {
+  if (typeof window === 'undefined') {
+    const noop: Storage = {
+      length: 0,
+      clear: () => {},
+      getItem: () => null,
+      key: () => null,
+      removeItem: () => {},
+      setItem: () => {},
+    };
+    return noop;
+  }
+  try {
+    const probe = '__trip_kitty_probe__';
+    window.localStorage.setItem(probe, probe);
+    window.localStorage.removeItem(probe);
+    return window.localStorage;
+  } catch {
+    const mem = new Map<string, string>();
+    const memStorage: Storage = {
+      get length() {
+        return mem.size;
+      },
+      clear: () => mem.clear(),
+      getItem: (k) => mem.get(k) ?? null,
+      key: (i) => Array.from(mem.keys())[i] ?? null,
+      removeItem: (k) => {
+        mem.delete(k);
+      },
+      setItem: (k, v) => {
+        mem.set(k, v);
+      },
+    };
+    return memStorage;
+  }
+}
 import {
   seedContributions,
   seedExpenses,
@@ -204,7 +244,7 @@ export const useMockStore = create<State>()(
     }),
     {
       name: 'trip-kitty-mock',
-      // SSR safety
+      storage: createJSONStorage(makeSafeStorage),
       skipHydration: false,
     },
   ),
