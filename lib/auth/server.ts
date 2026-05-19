@@ -50,7 +50,7 @@ export async function getUser(): Promise<User> {
     email: row.email,
     displayName: row.displayName,
     avatarUrl: row.avatarUrl ?? undefined,
-    role: row.role as 'admin' | 'member',
+    role: row.role,
     removedAt: undefined,
     createdAt: row.createdAt.toISOString(),
   }

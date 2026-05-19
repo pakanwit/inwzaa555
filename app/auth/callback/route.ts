@@ -5,7 +5,8 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
+  const origin = request.nextUrl.origin
   const code = searchParams.get('code')
 
   if (!code) {
@@ -47,15 +48,19 @@ export async function GET(request: NextRequest) {
     'Member'
 
   // Insert users row on first sign-in; DO NOTHING on subsequent sign-ins (idempotent)
-  await db
-    .insert(users)
-    .values({
-      id: authUser.id,
-      email: authUser.email,
-      displayName,
-      role: 'member',
-    })
-    .onConflictDoNothing()
+  try {
+    await db
+      .insert(users)
+      .values({
+        id: authUser.id,
+        email: authUser.email,
+        displayName,
+        role: 'member',
+      })
+      .onConflictDoNothing()
+  } catch {
+    return NextResponse.redirect(new URL('/login', origin))
+  }
 
   return NextResponse.redirect(new URL('/', origin))
 }

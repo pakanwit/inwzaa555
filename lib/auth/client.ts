@@ -10,11 +10,14 @@ export function createSupabaseBrowserClient() {
   )
 }
 
+// Module-level singleton — createBrowserClient caches by URL+key internally
+const _browserClient = createSupabaseBrowserClient()
+
 export function useCurrentUser(): User | null {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient()
+    const supabase = _browserClient
 
     async function loadUser() {
       const {
@@ -22,13 +25,13 @@ export function useCurrentUser(): User | null {
       } = await supabase.auth.getUser()
       if (!authUser) { setUser(null); return }
 
-      const { data: row } = await supabase
+      const { data: row, error: rowError } = await supabase
         .from('users')
         .select('id, email, display_name, avatar_url, role, removed_at, created_at')
         .eq('id', authUser.id)
         .single()
 
-      if (!row || row.removed_at) { setUser(null); return }
+      if (rowError || !row || row.removed_at !== null) { setUser(null); return }
 
       setUser({
         id: row.id,
