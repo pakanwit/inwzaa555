@@ -8,6 +8,7 @@ const ACTIVE_USER_KEY = 'trip-kitty-active-user';
 
 type Ctx = {
   currentUser: User | null;
+  hydrated: boolean;
   signInAs: (userId: string) => void;
   signOut: () => void;
 };
@@ -39,7 +40,7 @@ export function MockAuthProvider({ children }: { children: React.ReactNode }) {
       : null;
 
   return (
-    <AuthCtx.Provider value={{ currentUser, signInAs, signOut }}>
+    <AuthCtx.Provider value={{ currentUser, hydrated, signInAs, signOut }}>
       {children}
     </AuthCtx.Provider>
   );
