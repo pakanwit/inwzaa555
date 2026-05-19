@@ -38,13 +38,21 @@ users (
   email         text unique not null
   display_name  text not null
   avatar_url    text
+  role          text not null default 'member'
+                  check (role in ('admin','member'))
+  removed_at    timestamptz       -- soft-remove: can't sign in, but history preserved
   created_at    timestamptz default now()
 )
 
-allowed_emails (
-  email         text PK
-  invited_by    uuid references users(id)
-  invited_at    timestamptz default now()
+invite_tokens (
+  id            uuid PK
+  token         text unique not null     -- random 32-char url-safe
+  created_by    uuid references users(id) not null
+  created_at    timestamptz default now()
+  expires_at    timestamptz not null     -- default created_at + 7 days
+  used_by       uuid references users(id) -- NULL while unused
+  used_at       timestamptz
+  revoked_at    timestamptz               -- admin can kill a link before use
 )
 
 contributions (
@@ -80,9 +88,9 @@ attachments (
 )
 ```
 
-**Indices:** `expenses(occurred_at desc)`, `expenses(fronted_by_user_id) where reimbursed_at is null`, `contributions(user_id)`, `attachments(parent_type, parent_id)`.
+**Indices:** `expenses(occurred_at desc)`, `expenses(fronted_by_user_id) where reimbursed_at is null`, `contributions(user_id)`, `attachments(parent_type, parent_id)`, `invite_tokens(token)`.
 
-**Row Level Security:** every table requires the requesting user to exist in `users`. `allowed_emails` is read-only for members, write for admins (v1: any member is admin).
+**Row Level Security:** every table requires the requesting user to exist in `users` with `removed_at IS NULL`. Write permissions are scoped by role + ownership — see §7.
 
 ## 5. Balance Math
 
@@ -116,15 +124,58 @@ These derived values are computed in a single SQL view `v_balances` rather than 
 | `/expenses/new` | Add expense form: amount, description, category, occurred_at, paid_by (pot / me / other member), optional photo upload. |
 | `/expenses/[id]` | Detail: receipt fullscreen viewer, edit, delete, "Mark reimbursed" button (if fronted & unsettled). |
 | `/contributions` | List all contributions. |
-| `/contributions/new` | Add contribution form: who, amount, when, optional transfer-screenshot upload. |
-| `/members` | Member roster + add/remove allowed emails. |
+| `/contributions/new` | Add contribution form: who (self for members, anyone for admins), amount, when, optional transfer-screenshot upload. |
+| `/members` | Roster with role badges. Admin-only controls: generate/revoke invite link, copy link, soft-remove member, promote/demote. Members see read-only roster. |
+| `/invite/[token]` | Public invite-acceptance page (no auth needed). Validates token, collects email + display name, sends magic link, marks token used on successful first login. |
 
-## 7. Friends-Only Access
+## 7. Roles, Permissions & Access
 
-1. Owner pre-seeds `allowed_emails` table (initial values via migration, then UI on `/members`)
-2. Magic link sign-in checks email against `allowed_emails` before sending the link (server action)
-3. Supabase row-level security policies double-check on every query: `auth.jwt()->>'email' IN (SELECT email FROM allowed_emails)`
-4. No public sign-up route
+### Roles
+
+| Role | Granted at | Notes |
+|---|---|---|
+| `admin` | First user to sign in becomes admin automatically (bootstrap). Admins can promote/demote other members. | Cannot demote yourself if you are the last admin. |
+| `member` | Default for everyone joining via invite link. | |
+
+A user with `removed_at IS NOT NULL` is **soft-removed**: cannot sign in, cannot mutate anything, but their expense/contribution history stays in the ledger (so balances remain correct).
+
+### Permission matrix
+
+| Action | Member | Admin |
+|---|---|---|
+| View dashboard, balances, expenses, contributions | ✅ | ✅ |
+| Create expense fronted by **self** (with receipt) | ✅ | ✅ |
+| Create expense paid from pot (no fronter) | ❌ | ✅ |
+| Create expense fronted by **another** member | ❌ | ✅ |
+| Update/delete **own** expense (while not reimbursed) | ✅ | ✅ |
+| Update/delete **another member's** expense | ❌ | ✅ |
+| Mark expense reimbursed | ❌ | ✅ |
+| Create **own** contribution (with transfer evidence) | ✅ | ✅ |
+| Update/delete **own** contribution | ✅ | ✅ |
+| Update/delete **another member's** contribution | ❌ | ✅ |
+| Upload/delete attachments on records they can edit | ✅ (own records only) | ✅ (any) |
+| Generate / revoke invite link | ❌ | ✅ |
+| Remove member (soft) | ❌ | ✅ |
+| Promote member → admin, demote admin → member | ❌ | ✅ |
+
+Rule of thumb: **members own their own evidence; admins own the group.**
+
+### Invite-link flow
+
+1. Admin clicks "Generate invite link" on `/members` → server creates an `invite_tokens` row with a random 32-char token, 7-day expiry → link displayed as `https://<host>/invite/<token>` with a one-click copy button
+2. Admin shares link via Line/WhatsApp/etc.
+3. Friend opens link:
+   - Server validates token (exists, not expired, not used, not revoked)
+   - Friend enters email + display name → magic link sent
+   - On successful magic-link login, server creates `users` row with `role='member'` and marks the token `used_by` + `used_at`
+4. Admins can revoke an unused token from `/members` (sets `revoked_at`)
+5. Tokens are single-use; each new friend needs their own link
+
+### Enforcement
+
+- **Server actions** are the only mutation path. Every action runs a permission check helper (`requireAdmin()`, `requireOwnerOrAdmin(record)`) before touching the DB. No client-side trust.
+- **Supabase RLS** policies enforce the same rules at the DB layer as defense-in-depth (e.g., `UPDATE expenses` allowed when `auth.uid() = created_by OR auth.uid() IN (SELECT id FROM users WHERE role='admin')`).
+- **No public sign-up route.** The only way in is `/invite/<token>` with a valid token.
 
 ## 8. Image Storage
 
@@ -207,7 +258,8 @@ the-rich-boys/
 - **Unit:** balance math (`lib/balance.ts`) — pure function, table-driven tests covering empty state, only contributions, only expenses, mixed fronted/reimbursed, integer-division remainder
 - **Integration:** Drizzle queries against a local Supabase, seeded with fixtures, asserting `v_balances` view output
 - **Component:** Y2K components render with correct ARIA roles and keyboard focus
-- **E2E (Playwright, smoke only):** sign-in flow, add-expense flow, mark-reimbursed flow on mobile + desktop viewports
+- **Permission tests:** dedicated suite asserting the permission matrix from §7 — for each (role × action × ownership) combination, server action must allow or reject correctly. Run against test DB with RLS enabled to verify both layers.
+- **E2E (Playwright, smoke only):** invite-link → sign-in flow, add-expense flow, mark-reimbursed flow, attempt-edit-others-expense-as-member (must fail) on mobile + desktop viewports
 
 ## 13. Out of Scope for v1
 
@@ -226,7 +278,9 @@ Listed explicitly to prevent scope creep:
 ## 14. Open Questions Resolved
 
 - **Trip count:** single hardcoded trip in v1; no `trips` table
-- **Auth method:** magic link only
+- **Auth method:** magic link only, gated by single-use invite tokens
+- **Roles:** `admin` and `member`; first signup auto-promoted to admin
 - **Split logic:** equal share, implicit, computed from total ÷ member_count
 - **UI base:** fully hand-rolled Y2K theme, no 98.css or shadcn
 - **Currency:** THB only, stored as integer cents
+- **Member removal:** soft-delete (`removed_at`) to preserve ledger integrity
