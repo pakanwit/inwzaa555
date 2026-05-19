@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatBaht } from '@/lib/money';
-import type { Expense, User } from '@/lib/mock/types';
+import type { Expense, User } from '@/lib/types'
 import { Badge } from '@/components/y2k/badge';
 
 export function ExpenseRow({
