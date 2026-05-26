@@ -28,7 +28,7 @@ function toExpense(row: typeof expenses.$inferSelect): Expense {
 function toUser(row: typeof users.$inferSelect): User {
   return {
     id: row.id,
-    email: row.email,
+    email: row.email ?? undefined,
     displayName: row.displayName,
     avatarUrl: row.avatarUrl ?? undefined,
     role: row.role,

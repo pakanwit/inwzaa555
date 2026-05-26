@@ -1,6 +1,7 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { eq, asc } from 'drizzle-orm'
+import { z } from 'zod'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { getUser } from '@/lib/auth/server'
@@ -10,10 +11,37 @@ import type { User } from '@/lib/types'
 
 function toUser(row: typeof users.$inferSelect): User {
   return {
-    id: row.id, email: row.email, displayName: row.displayName,
+    id: row.id, email: row.email ?? undefined, displayName: row.displayName,
     avatarUrl: row.avatarUrl ?? undefined, role: row.role,
     removedAt: row.removedAt?.toISOString(), createdAt: row.createdAt.toISOString(),
   }
+}
+
+const createMemberSchema = z.object({
+  displayName: z.string().min(1).max(80),
+  email: z.string().email().optional().or(z.literal('').transform(() => undefined)),
+})
+
+export async function createMember(
+  values: z.infer<typeof createMemberSchema>,
+): Promise<{ ok: true; member: User } | { ok: false; error: string }> {
+  const actor = await getUser()
+  if (!can(actor, 'member.promote')) return { ok: false, error: 'Not permitted' }
+  const parsed = createMemberSchema.safeParse(values)
+  if (!parsed.success) return { ok: false, error: 'Invalid member data' }
+  const [row] = await db
+    .insert(users)
+    .values({
+      displayName: parsed.data.displayName.trim(),
+      email: parsed.data.email ?? null,
+      role: 'member',
+    })
+    .returning()
+  if (!row) return { ok: false, error: 'Failed to create member' }
+  revalidatePath('/members')
+  revalidatePath('/contributions')
+  revalidatePath('/')
+  return { ok: true, member: toUser(row) }
 }
 
 export async function listMembers(): Promise<User[]> {
@@ -60,6 +88,7 @@ export async function generateMagicLink(targetId: string): Promise<{ ok: true; l
   if (!can(actor, 'invite.create')) return { ok: false, error: 'Not permitted' }
   const [target] = await db.select().from(users).where(eq(users.id, targetId)).limit(1)
   if (!target) return { ok: false, error: 'User not found' }
+  if (!target.email) return { ok: false, error: 'Member has no email; add one before generating a magic link' }
   if (!process.env.SUPABASE_SECRET_KEY) return { ok: false, error: 'Magic link generation requires SUPABASE_SECRET_KEY to be configured' }
   try {
     const admin = createSupabaseAdminClient()

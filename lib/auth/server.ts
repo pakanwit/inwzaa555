@@ -48,7 +48,7 @@ export const getUser = cache(async (): Promise<User> => {
 
   return {
     id: row.id,
-    email: row.email,
+    email: row.email ?? undefined,
     displayName: row.displayName,
     avatarUrl: row.avatarUrl ?? undefined,
     role: row.role,

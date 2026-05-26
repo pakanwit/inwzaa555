@@ -3,7 +3,7 @@ export type Role = 'admin' | 'member';
 
 export type User = {
   id: UserId;
-  email: string;
+  email?: string;            // absent for admin-created Members who haven't signed in
   displayName: string;
   avatarUrl?: string;
   role: Role;

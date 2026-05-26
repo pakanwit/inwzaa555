@@ -11,7 +11,7 @@ import { ExpenseRow, findFronter } from '@/components/features/expense-row'
 import type { User, Expense, Contribution } from '@/lib/types'
 
 function toUser(row: typeof users.$inferSelect): User {
-  return { id: row.id, email: row.email, displayName: row.displayName, avatarUrl: row.avatarUrl ?? undefined, role: row.role, removedAt: row.removedAt?.toISOString(), createdAt: row.createdAt.toISOString() }
+  return { id: row.id, email: row.email ?? undefined, displayName: row.displayName, avatarUrl: row.avatarUrl ?? undefined, role: row.role, removedAt: row.removedAt?.toISOString(), createdAt: row.createdAt.toISOString() }
 }
 function toExpense(row: typeof expenses.$inferSelect): Expense {
   return { id: row.id, amountCents: row.amountCents, description: row.description, category: row.category, occurredAt: row.occurredAt.toISOString(), frontedByUserId: row.frontedByUserId ?? undefined, reimbursedAt: row.reimbursedAt?.toISOString(), createdBy: row.createdBy, createdAt: row.createdAt.toISOString(), attachments: [] }

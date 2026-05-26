@@ -1,20 +1,16 @@
-import { pgTable, pgSchema, uuid, text, timestamp, bigint, check, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, bigint, check, index } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { ExpenseCategory } from '@/lib/types'
 
-// Reference Supabase's managed auth schema for the FK constraint
-const authSchema = pgSchema('auth')
-const authUsers = authSchema.table('users', {
-  id: uuid('id').primaryKey(),
-})
-
+// A users row may be created by Admin without any auth.users link (an
+// unclaimed Member), so we no longer FK id to auth.users. The trigger on
+// auth.users still inserts rows with id=auth.users.id by convention, but
+// that's not enforced at the DB level.
 export const users = pgTable(
   'users',
   {
-    id: uuid('id')
-      .primaryKey()
-      .references(() => authUsers.id, { onDelete: 'cascade' }),
-    email: text('email').notNull().unique(),
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email'),
     displayName: text('display_name').notNull(),
     avatarUrl: text('avatar_url'),
     role: text('role').notNull().default('member').$type<'admin' | 'member'>(),

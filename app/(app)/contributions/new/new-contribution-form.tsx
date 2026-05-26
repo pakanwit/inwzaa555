@@ -9,9 +9,12 @@ import { Button } from '@/components/y2k/button'
 import { TextInput } from '@/components/y2k/text-input'
 import { Select } from '@/components/y2k/select'
 import { createContribution, getSignedSlipUploadUrl } from '@/lib/actions/contributions'
+import { createMember } from '@/lib/actions/members'
 import { createSupabaseBrowserClient } from '@/lib/auth/client'
 import { parseBahtInput } from '@/lib/money'
 import type { User } from '@/lib/types'
+
+const ADD_NEW_MEMBER = '__add_new_member__'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const
@@ -43,7 +46,15 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const contributionId = useMemo(() => crypto.randomUUID(), [])
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<Values>({
+  // Local roster so newly-created Members appear in the dropdown without a full refresh.
+  const [roster, setRoster] = useState<User[]>(users)
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [addMemberError, setAddMemberError] = useState<string | null>(null)
+  const [addingMember, setAddingMember] = useState(false)
+
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       userId: currentUser.id,
@@ -53,10 +64,35 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
     },
   })
 
-  const memberOptions = users.map((u) => ({
-    value: u.id,
-    label: u.id === currentUser.id ? `${u.displayName} (me)` : u.displayName,
-  }))
+  const memberOptions = [
+    ...roster.map((u) => ({
+      value: u.id,
+      label: u.id === currentUser.id ? `${u.displayName} (me)` : u.displayName,
+    })),
+    { value: ADD_NEW_MEMBER, label: '+ Add new member…' },
+  ]
+
+  function onContributorChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    if (e.target.value === ADD_NEW_MEMBER) {
+      setShowAddMember(true)
+      // Revert the visible selection so the form doesn't hold the sentinel value.
+      setValue('userId', currentUser.id)
+    }
+  }
+
+  async function onAddMember() {
+    setAddMemberError(null)
+    if (!newName.trim()) { setAddMemberError('Name is required'); return }
+    setAddingMember(true)
+    const result = await createMember({ displayName: newName, email: newEmail || undefined })
+    setAddingMember(false)
+    if (!result.ok) { setAddMemberError(result.error); return }
+    setRoster((prev) => [...prev, result.member])
+    setValue('userId', result.member.id, { shouldValidate: true })
+    setShowAddMember(false)
+    setNewName('')
+    setNewEmail('')
+  }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setSlipError(null)
@@ -114,7 +150,42 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
   return (
     <Window title="New contribution">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <Select label="Contributor" options={memberOptions} error={errors.userId?.message} {...register('userId')} />
+        <Select
+          label="Contributor"
+          options={memberOptions}
+          error={errors.userId?.message}
+          {...register('userId', { onChange: onContributorChange })}
+        />
+        {showAddMember ? (
+          <div className="bevel-in bg-y2k-chrome-100 flex flex-col gap-2 p-3">
+            <strong className="text-sm">Add new member</strong>
+            <TextInput
+              label="Display name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="e.g. Bob"
+            />
+            <TextInput
+              label="Email (optional)"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="bob@example.com"
+            />
+            {addMemberError ? <span className="text-y2k-magenta text-sm">{addMemberError}</span> : null}
+            <div className="flex gap-2">
+              <Button type="button" variant="primary" onClick={onAddMember} disabled={addingMember}>
+                {addingMember ? 'Adding…' : 'Add'}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => { setShowAddMember(false); setAddMemberError(null) }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <div className="grid gap-3 md:grid-cols-2">
           <TextInput label="Amount (THB)" inputMode="numeric" error={errors.amountBaht?.message} {...register('amountBaht')} />
           <TextInput label="Date" type="date" error={errors.contributedAt?.message} {...register('contributedAt')} />

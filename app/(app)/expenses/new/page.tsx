@@ -9,7 +9,7 @@ export default async function NewExpensePage() {
   const currentUser = await getUser()
   const rows = await db.select().from(users).where(isNull(users.removedAt))
   const allUsers: User[] = rows.map((r) => ({
-    id: r.id, email: r.email, displayName: r.displayName,
+    id: r.id, email: r.email ?? undefined, displayName: r.displayName,
     avatarUrl: r.avatarUrl ?? undefined, role: r.role,
     removedAt: r.removedAt?.toISOString(), createdAt: r.createdAt.toISOString(),
   }))

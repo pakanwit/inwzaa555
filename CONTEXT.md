@@ -41,8 +41,8 @@ _Avoid_: Balance, net balance, amount owed
 ### People & Access
 
 **Member**:
-A person in the friend group who has signed in at least once. Has a row in the `users` table. All members can view everything and create their own expenses/contributions.
-_Avoid_: User, participant, friend
+A person Admin has registered for the trip. May or may not have signed in. Has a row in the `users` table either way. Signed-in Members can use the site themselves (view everything, create their own Expenses); never-signed-in Members exist only so their Pot Contributions can be tracked under their name.
+_Avoid_: User, participant, friend, contributor
 
 **Admin**:
 A Member with `role='admin'`. The first Admin is bootstrapped by editing `role` directly in the Supabase Table Editor; subsequent Admins are promoted via the Members page. Can mutate any record and manage the roster.
