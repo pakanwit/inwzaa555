@@ -10,4 +10,4 @@ CREATE TABLE "attachments" (
 );
 --> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "attachments_parent_idx" ON "attachments" USING btree ("parent_type", "parent_id");
+CREATE INDEX "attachments_parent_idx" ON "attachments" USING btree ("parent_type","parent_id");
