@@ -188,3 +188,74 @@ export async function createContribution(
   revalidatePath('/')
   return { ok: true }
 }
+
+const updateSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  amountBaht: z.string().min(1),
+  contributedAt: z.string().min(1),
+  note: z.string().optional(),
+})
+
+export async function updateContribution(
+  values: z.infer<typeof updateSchema>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const actor = await getUser()
+  if (!can(actor, 'contribution.update', { resource: {} as Contribution })) {
+    return { ok: false, error: 'Not permitted' }
+  }
+  const parsed = updateSchema.safeParse(values)
+  if (!parsed.success) return { ok: false, error: 'Invalid form data' }
+
+  const amountCents = parseBahtInput(parsed.data.amountBaht)
+  if (!amountCents || amountCents <= 0) return { ok: false, error: 'Invalid amount' }
+
+  await db
+    .update(contributions)
+    .set({
+      userId: parsed.data.userId,
+      amountCents,
+      contributedAt: new Date(parsed.data.contributedAt),
+      note: parsed.data.note || null,
+    })
+    .where(eq(contributions.id, parsed.data.id))
+
+  revalidatePath('/contributions')
+  revalidatePath('/')
+  return { ok: true }
+}
+
+export async function deleteContribution(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const actor = await getUser()
+  if (!can(actor, 'contribution.delete', { resource: {} as Contribution })) {
+    return { ok: false, error: 'Not permitted' }
+  }
+
+  // Best-effort: remove slip files from Storage. The DB delete is the source
+  // of truth — leftover files would just be orphans, recoverable later.
+  const slipRows = await db
+    .select()
+    .from(attachments)
+    .where(and(eq(attachments.parentType, 'contribution'), eq(attachments.parentId, id)))
+  if (slipRows.length > 0) {
+    try {
+      const supabase = createSupabaseAdminClient()
+      await supabase.storage.from(RECEIPTS_BUCKET).remove(slipRows.map((r) => r.storagePath))
+    } catch {
+      // ignored — orphan files are acceptable
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(attachments)
+      .where(and(eq(attachments.parentType, 'contribution'), eq(attachments.parentId, id)))
+    await tx.delete(contributions).where(eq(contributions.id, id))
+  })
+
+  revalidatePath('/contributions')
+  revalidatePath('/')
+  return { ok: true }
+}

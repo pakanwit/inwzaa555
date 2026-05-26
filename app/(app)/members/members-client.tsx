@@ -95,6 +95,9 @@ export default function MembersClient({
     })
   }
 
+  const activeCount = members.filter((m) => !m.removedAt).length
+  const removedCount = members.length - activeCount
+
   return (
     <div className="space-y-3">
       {error ? (
@@ -102,6 +105,10 @@ export default function MembersClient({
           {error} <button className="underline ml-2" onClick={() => setError(null)}>dismiss</button>
         </p>
       ) : null}
+      <p className="text-xs">
+        {activeCount} active {activeCount === 1 ? 'member' : 'members'}
+        {removedCount > 0 ? ` · ${removedCount} removed` : ''}
+      </p>
       <Window title="Members">
         <ul className="space-y-1">
           {members.map((u) => {
