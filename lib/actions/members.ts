@@ -60,7 +60,7 @@ export async function generateMagicLink(targetId: string): Promise<{ ok: true; l
   if (!can(actor, 'invite.create')) return { ok: false, error: 'Not permitted' }
   const [target] = await db.select().from(users).where(eq(users.id, targetId)).limit(1)
   if (!target) return { ok: false, error: 'User not found' }
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { ok: false, error: 'Magic link generation requires SUPABASE_SERVICE_ROLE_KEY to be configured' }
+  if (!process.env.SUPABASE_SECRET_KEY) return { ok: false, error: 'Magic link generation requires SUPABASE_SECRET_KEY to be configured' }
   try {
     const admin = createSupabaseAdminClient()
     const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email: target.email })
