@@ -34,7 +34,11 @@ export function can<A extends Action>(actor: User, action: A, ctx?: Ctx<A>): boo
     case 'expense.create.fromPot':
     case 'expense.create.frontedByOther':
     case 'expense.markReimbursed':
+    // Contributions are admin-only end-to-end — see ADR 0007.
+    case 'contribution.create.self':
     case 'contribution.create.other':
+    case 'contribution.update':
+    case 'contribution.delete':
     case 'invite.create':
     case 'invite.revoke':
     case 'member.remove':
@@ -43,7 +47,6 @@ export function can<A extends Action>(actor: User, action: A, ctx?: Ctx<A>): boo
       return isAdmin;
 
     case 'expense.create.frontedBySelf':
-    case 'contribution.create.self':
       return true;
 
     case 'expense.update':
@@ -52,13 +55,6 @@ export function can<A extends Action>(actor: User, action: A, ctx?: Ctx<A>): boo
       if (isAdmin) return true;
       const isOwner = e.frontedByUserId === actor.id || e.createdBy === actor.id;
       return isOwner && !e.reimbursedAt;
-    }
-
-    case 'contribution.update':
-    case 'contribution.delete': {
-      const c = (ctx as { resource: Contribution }).resource;
-      if (isAdmin) return true;
-      return c.userId === actor.id || c.createdBy === actor.id;
     }
   }
 

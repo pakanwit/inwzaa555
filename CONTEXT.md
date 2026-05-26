@@ -11,8 +11,12 @@ The central cash pool funded by member contributions. Expenses are drawn from th
 _Avoid_: Kitty, fund, pool, shared wallet
 
 **Contribution**:
-A cash deposit a member makes into the Pot. Multiple contributions per member are allowed.
+A transfer into the Pot, evidenced by a Slip image. Only Admins record Contributions. Multiple Contributions per member are allowed.
 _Avoid_: Payment, deposit, top-up
+
+**Slip**:
+The bank transfer evidence attached to a Contribution. Required (a Contribution cannot exist without one). Viewable by all Members. Stored as an Attachment in the `receipts` bucket.
+_Avoid_: Receipt, proof, transfer screenshot
 
 **Expense**:
 A spend charged against the group, either drawn from the Pot or fronted out-of-pocket by a member.

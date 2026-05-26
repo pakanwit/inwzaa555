@@ -21,7 +21,7 @@ function toContribution(row: typeof contributions.$inferSelect): Contribution {
 }
 
 export default async function DashboardPage() {
-  await getUser()
+  const currentUser = await getUser()
   const [userRows, expenseRows, contributionRows] = await Promise.all([
     db.select().from(users),
     db.select().from(expenses).orderBy(desc(expenses.occurredAt)),
@@ -42,6 +42,18 @@ export default async function DashboardPage() {
     }
   }
 
+  // Per-member contribution totals — for the "Who paid" window
+  const contributedByUser = new Map<string, number>()
+  for (const c of allContributions) {
+    contributedByUser.set(c.userId, (contributedByUser.get(c.userId) ?? 0) + c.amountCents)
+  }
+  const paidRows = allUsers
+    .filter((u) => !u.removedAt)
+    .map((u) => ({ user: u, total: contributedByUser.get(u.id) ?? 0 }))
+    .sort((a, b) => b.total - a.total || a.user.displayName.localeCompare(b.user.displayName))
+
+  const isAdmin = currentUser.role === 'admin'
+
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {/* Pot summary */}
@@ -52,6 +64,23 @@ export default async function DashboardPage() {
           <Stat label="Spent so far" value={formatBaht(b.potSpent)} />
           <Stat label="Fair share / person" value={formatBaht(b.fairShare)} />
         </div>
+      </Window>
+
+      {/* Who paid into the Pot */}
+      <Window title="Who paid into the Pot">
+        {paidRows.length === 0 ? (
+          <p className="text-xs">No members yet.</p>
+        ) : (
+          <ul className="space-y-1">
+            {paidRows.map(({ user, total }) => (
+              <li key={user.id} className="flex justify-between">
+                <span>{user.displayName}</span>
+                <strong>{total > 0 ? formatBaht(total) : '—'}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-3 text-xs"><Link href="/contributions">View all contributions →</Link></div>
       </Window>
 
       {/* Pot owes */}
@@ -80,7 +109,9 @@ export default async function DashboardPage() {
           <h2 className="font-bold">Recent expenses</h2>
           <div className="flex gap-2">
             <Link href="/expenses/new"><Button variant="primary">Add expense</Button></Link>
-            <Link href="/contributions/new"><Button>Add contribution</Button></Link>
+            {isAdmin ? (
+              <Link href="/contributions/new"><Button>Add contribution</Button></Link>
+            ) : null}
           </div>
         </div>
         {recent.length === 0 ? (

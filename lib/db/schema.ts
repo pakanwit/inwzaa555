@@ -41,6 +41,23 @@ export const contributions = pgTable(
   ],
 )
 
+export const attachments = pgTable(
+  'attachments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    parentType: text('parent_type').notNull().$type<'contribution' | 'expense'>(),
+    parentId: uuid('parent_id').notNull(),
+    storagePath: text('storage_path').notNull(),
+    mimeType: text('mime_type').notNull(),
+    uploadedBy: uuid('uploaded_by').notNull().references(() => users.id),
+    uploadedAt: timestamp('uploaded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('attachments_parent_type_check', sql`${t.parentType} IN ('contribution', 'expense')`),
+    index('attachments_parent_idx').on(t.parentType, t.parentId),
+  ],
+)
+
 export const expenses = pgTable(
   'expenses',
   {

@@ -70,19 +70,20 @@ describe('permissions: expense actions', () => {
 });
 
 describe('permissions: contribution actions', () => {
-  it('member can manage own contribution', () => {
-    expect(can(member, 'contribution.update', { resource: contribution() })).toBe(true);
-    expect(can(member, 'contribution.delete', { resource: contribution() })).toBe(true);
+  it('only admin can create contributions (ADR 0007)', () => {
+    expect(can(admin, 'contribution.create.self')).toBe(true);
+    expect(can(admin, 'contribution.create.other')).toBe(true);
+    expect(can(member, 'contribution.create.self')).toBe(false);
+    expect(can(member, 'contribution.create.other')).toBe(false);
   });
-  it('member cannot manage another member\'s contribution', () => {
+  it('only admin can update or delete contributions', () => {
+    expect(can(admin, 'contribution.update', { resource: contribution() })).toBe(true);
+    expect(can(admin, 'contribution.delete', { resource: contribution() })).toBe(true);
+    expect(can(member, 'contribution.update', { resource: contribution() })).toBe(false);
+    expect(can(member, 'contribution.delete', { resource: contribution() })).toBe(false);
     expect(
       can(member, 'contribution.update', { resource: contribution({ userId: 'O', createdBy: 'O' }) }),
     ).toBe(false);
-  });
-  it('admin can manage any contribution', () => {
-    expect(
-      can(admin, 'contribution.update', { resource: contribution({ userId: 'O', createdBy: 'O' }) }),
-    ).toBe(true);
   });
 });
 

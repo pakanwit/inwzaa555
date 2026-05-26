@@ -1,0 +1,7 @@
+# Contributions are admin-only and require a slip image
+
+The original Contribution model let any Member self-record their own Contribution and let Admins record on anyone's behalf. In practice every Contribution is a bank transfer to the Admin who holds the Pot cash, so the Admin is always the one who can verify it actually happened. Member-recorded Contributions had no evidence backing and created two implicit classes of data ("verified by admin" vs. "claimed by member") that nothing in the schema distinguished.
+
+We're tightening the model: only Admins can create Contributions, and every Contribution must have at least one Slip attached (a bank transfer screenshot in the `receipts` bucket). The Slip is enforced at the server action level (insert Contribution + Attachment in a transaction; reject if no file uploaded) rather than via a DB constraint, since Postgres can't cleanly express "at least one related row" without triggers. Slips are viewable by all Members — privacy isn't a concern because the slips are already shared in the group chat. Edit and delete remain admin-only for symmetry.
+
+Trade-off: Members lose the ability to self-record. If the Admin is slow, a Member who's already transferred won't see their Contribution in the list until the Admin logs it. For a fixed four-person trip this latency is negligible and is outweighed by every row in `contributions` being auditable against a real bank transfer.
