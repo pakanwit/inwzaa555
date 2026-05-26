@@ -15,7 +15,9 @@ export type Action =
   | 'invite.revoke'
   | 'member.remove'
   | 'member.promote'
-  | 'member.demote';
+  | 'member.demote'
+  | 'member.update'
+  | 'member.delete.hard';
 
 type ResourceMap = {
   'expense.update': { resource: Expense };
@@ -44,6 +46,8 @@ export function can<A extends Action>(actor: User, action: A, ctx?: Ctx<A>): boo
     case 'member.remove':
     case 'member.promote':
     case 'member.demote':
+    case 'member.update':
+    case 'member.delete.hard':
       return isAdmin;
 
     case 'expense.create.frontedBySelf':
