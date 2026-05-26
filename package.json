@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
+    "db:generate:custom": "dotenv -e .env.local -- drizzle-kit generate --custom",
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
+    "db:push": "dotenv -e .env.local -- drizzle-kit push"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -33,6 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.2",
+    "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.31.10",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
