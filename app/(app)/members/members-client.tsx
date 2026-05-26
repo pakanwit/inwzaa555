@@ -38,6 +38,7 @@ export default function MembersClient({
   const [editEmail, setEditEmail] = useState('')
   const [editRole, setEditRole] = useState<'admin' | 'member'>('member')
   const [confirmDelete, setConfirmDelete] = useState<MemberWithStats | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<MemberWithStats | null>(null)
 
   const isAdmin = can(currentUser, 'invite.create')
 
@@ -69,11 +70,13 @@ export default function MembersClient({
     })
   }
 
-  function softRemove(targetId: string) {
+  function runSoftRemove() {
+    if (!confirmRemove) return
     startTransition(async () => {
-      const result = await removeMember(targetId)
-      if (!result.ok) setError(result.error)
-      else router.refresh()
+      const result = await removeMember(confirmRemove.id)
+      if (!result.ok) { setError(result.error); setConfirmRemove(null); return }
+      setConfirmRemove(null)
+      router.refresh()
     })
   }
 
@@ -136,7 +139,7 @@ export default function MembersClient({
                         <Button
                           variant="danger"
                           disabled={isPending || isSelf}
-                          onClick={() => softRemove(u.id)}
+                          onClick={() => setConfirmRemove(u)}
                         >
                           Remove
                         </Button>
@@ -187,6 +190,22 @@ export default function MembersClient({
         <div className="flex justify-end gap-2">
           <Button onClick={() => { if (magicLink) navigator.clipboard?.writeText(magicLink) }}>Copy</Button>
           <Button onClick={() => setMagicLink(null)}>Done</Button>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={!!confirmRemove}
+        title="Remove member?"
+        onClose={() => setConfirmRemove(null)}
+      >
+        <p className="mb-3">
+          Remove <strong>{confirmRemove?.displayName}</strong>? Their history stays in the ledger, but they can&apos;t sign in and won&apos;t appear in pickers. You can restore them later by clearing <code>removed_at</code> in the database.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button onClick={() => setConfirmRemove(null)}>Cancel</Button>
+          <Button variant="danger" disabled={isPending} onClick={runSoftRemove}>
+            {isPending ? 'Removing…' : 'Remove'}
+          </Button>
         </div>
       </Dialog>
 
