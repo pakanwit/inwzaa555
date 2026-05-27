@@ -25,7 +25,22 @@ const uploadUrlSchema = z.object({
   ext: z.enum(['jpg', 'jpeg', 'png', 'webp', 'heic']),
 })
 
-function toExpense(row: typeof expenses.$inferSelect): Expense {
+function toAttachment(row: typeof attachments.$inferSelect): Attachment {
+  return {
+    id: row.id,
+    parentType: row.parentType,
+    parentId: row.parentId,
+    storagePath: row.storagePath,
+    mimeType: row.mimeType,
+    uploadedBy: row.uploadedBy,
+    uploadedAt: row.uploadedAt.toISOString(),
+  }
+}
+
+function toExpense(
+  row: typeof expenses.$inferSelect,
+  attachmentList: Attachment[] = [],
+): Expense {
   return {
     id: row.id,
     amountCents: row.amountCents,
@@ -36,7 +51,7 @@ function toExpense(row: typeof expenses.$inferSelect): Expense {
     reimbursedAt: row.reimbursedAt?.toISOString(),
     createdBy: row.createdBy,
     createdAt: row.createdAt.toISOString(),
-    attachments: [],
+    attachments: attachmentList,
   }
 }
 
@@ -58,15 +73,43 @@ export async function listExpenses(): Promise<{ expenses: Expense[]; users: User
     db.select().from(expenses).orderBy(desc(expenses.occurredAt)),
     db.select().from(users),
   ])
-  return { expenses: expenseRows.map(toExpense), users: userRows.map(toUser) }
+
+  const expenseIds = expenseRows.map((e) => e.id)
+  const attachmentRows = expenseIds.length
+    ? await db
+        .select()
+        .from(attachments)
+        .where(and(eq(attachments.parentType, 'expense'), inArray(attachments.parentId, expenseIds)))
+    : []
+
+  const byParent = new Map<string, Attachment[]>()
+  for (const row of attachmentRows) {
+    const list = byParent.get(row.parentId) ?? []
+    list.push(toAttachment(row))
+    byParent.set(row.parentId, list)
+  }
+
+  return {
+    expenses: expenseRows.map((e) => toExpense(e, byParent.get(e.id) ?? [])),
+    users: userRows.map(toUser),
+  }
 }
 
 export async function getExpenseById(id: string): Promise<{ expense: Expense; users: User[] } | null> {
   await getUser()
   const [row] = await db.select().from(expenses).where(eq(expenses.id, id)).limit(1)
   if (!row) return null
-  const userRows = await db.select().from(users)
-  return { expense: toExpense(row), users: userRows.map(toUser) }
+  const [attachmentRows, userRows] = await Promise.all([
+    db
+      .select()
+      .from(attachments)
+      .where(and(eq(attachments.parentType, 'expense'), eq(attachments.parentId, id))),
+    db.select().from(users),
+  ])
+  return {
+    expense: toExpense(row, attachmentRows.map(toAttachment)),
+    users: userRows.map(toUser),
+  }
 }
 
 export async function createExpense(
