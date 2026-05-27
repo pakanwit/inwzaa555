@@ -16,7 +16,11 @@ _Avoid_: Payment, deposit, top-up
 
 **Slip**:
 The bank transfer evidence attached to a Contribution. Required (a Contribution cannot exist without one). Viewable by all Members. Stored as an Attachment in the `receipts` bucket.
-_Avoid_: Receipt, proof, transfer screenshot
+_Avoid_: Proof, transfer screenshot
+
+**Receipt**:
+The evidence photo attached to an Expense (a till receipt, a photo of the menu, a snapshot of the cash handover). Optional. Viewable by all Members. Stored as an Attachment in the `receipts` bucket. Parallel to Slip but for Expenses, not Contributions.
+_Avoid_: Bill, proof, expense photo
 
 **Expense**:
 A spend charged against the group, either drawn from the Pot or fronted out-of-pocket by a member.
@@ -53,8 +57,8 @@ A Member with `removed_at` set (soft-delete). Cannot sign in. Their Expense and 
 _Avoid_: Deleted user, banned user, deactivated user
 
 **Attachment**:
-A receipt or evidence photo linked to an Expense or Contribution, stored in the private `receipts` Supabase Storage bucket.
-_Avoid_: Receipt, photo, image, file
+The generic storage-layer term for any evidence photo linked to an Expense or Contribution, stored in the private `receipts` Supabase Storage bucket. In domain conversation prefer the specific subtype: **Slip** (for a Contribution) or **Receipt** (for an Expense).
+_Avoid_: Photo, image, file
 
 ### Domain Types
 
