@@ -177,7 +177,27 @@ export async function deleteExpense(id: string): Promise<{ ok: true } | { ok: fa
   const expense = toExpense(row)
   if (!can(actor, 'expense.delete', { resource: expense }))
     return { ok: false, error: 'Not permitted' }
-  await db.delete(expenses).where(eq(expenses.id, id))
+
+  const receiptRows = await db
+    .select()
+    .from(attachments)
+    .where(and(eq(attachments.parentType, 'expense'), eq(attachments.parentId, id)))
+  if (receiptRows.length > 0) {
+    try {
+      const supabase = createSupabaseAdminClient()
+      await supabase.storage.from(RECEIPTS_BUCKET).remove(receiptRows.map((r) => r.storagePath))
+    } catch {
+      // ignored — orphan files are acceptable
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(attachments)
+      .where(and(eq(attachments.parentType, 'expense'), eq(attachments.parentId, id)))
+    await tx.delete(expenses).where(eq(expenses.id, id))
+  })
+
   revalidatePath('/expenses')
   revalidatePath('/')
   redirect('/expenses')
