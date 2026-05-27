@@ -1,14 +1,25 @@
 'use server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, and, inArray } from 'drizzle-orm'
+import { z } from 'zod'
 import { db } from '@/lib/db'
-import { expenses, users } from '@/lib/db/schema'
+import { expenses, users, attachments } from '@/lib/db/schema'
 import { getUser } from '@/lib/auth/server'
+import { createSupabaseAdminClient } from '@/lib/auth/admin'
 import { can } from '@/lib/permissions'
 import { parseBahtInput } from '@/lib/money'
 import { expenseFormSchema, type ExpenseFormValues } from '@/lib/expense-form'
-import type { Expense, User } from '@/lib/types'
+import type { Attachment, Expense, User } from '@/lib/types'
+
+const RECEIPTS_BUCKET = 'receipts'
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const
+
+const uploadUrlSchema = z.object({
+  expenseId: z.string().uuid(),
+  mimeType: z.enum(ALLOWED_MIME),
+  ext: z.enum(['jpg', 'jpeg', 'png', 'webp', 'heic']),
+})
 
 function toExpense(row: typeof expenses.$inferSelect): Expense {
   return {
@@ -95,6 +106,45 @@ export async function deleteExpense(id: string): Promise<{ ok: true } | { ok: fa
   revalidatePath('/expenses')
   revalidatePath('/')
   redirect('/expenses')
+}
+
+export async function getSignedReceiptUploadUrl(
+  values: z.infer<typeof uploadUrlSchema>,
+): Promise<
+  | { ok: true; storagePath: string; token: string }
+  | { ok: false; error: string }
+> {
+  const actor = await getUser()
+  if (!can(actor, 'expense.create.frontedBySelf')) return { ok: false, error: 'Not permitted' }
+
+  const parsed = uploadUrlSchema.safeParse(values)
+  if (!parsed.success) return { ok: false, error: 'Invalid upload request' }
+
+  const fileId = crypto.randomUUID()
+  const storagePath = `expense/${parsed.data.expenseId}/${fileId}.${parsed.data.ext}`
+
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage
+    .from(RECEIPTS_BUCKET)
+    .createSignedUploadUrl(storagePath)
+  if (error || !data) return { ok: false, error: error?.message ?? 'Could not create upload URL' }
+
+  return { ok: true, storagePath, token: data.token }
+}
+
+export async function getSignedReceiptDownloadUrl(
+  storagePath: string,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  await getUser()
+  if (!storagePath.startsWith('expense/')) return { ok: false, error: 'Invalid path' }
+
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.storage
+    .from(RECEIPTS_BUCKET)
+    .createSignedUrl(storagePath, 60 * 60)
+  if (error || !data) return { ok: false, error: error?.message ?? 'Could not create download URL' }
+
+  return { ok: true, url: data.signedUrl }
 }
 
 export async function markExpenseReimbursed(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
