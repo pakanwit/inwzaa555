@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { Select } from '@/components/y2k/select'
-import { ExpenseRow, findFronter } from '@/components/features/expense-row'
+import { ExpenseRow } from '@/components/features/expense-row'
+import { findFronter } from '@/lib/expense-helpers'
 import type { Expense, User, ExpenseCategory } from '@/lib/types'
 
 const CATEGORIES: { value: ExpenseCategory | 'all'; label: string }[] = [
