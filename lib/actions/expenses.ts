@@ -9,7 +9,11 @@ import { getUser } from '@/lib/auth/server'
 import { createSupabaseAdminClient } from '@/lib/auth/admin'
 import { can } from '@/lib/permissions'
 import { parseBahtInput } from '@/lib/money'
-import { expenseFormSchema, type ExpenseFormValues } from '@/lib/expense-form'
+import {
+  createExpenseInputSchema,
+  type CreateExpenseInput,
+} from '@/lib/expense-form'
+import { isReceiptPathForExpense } from '@/lib/actions/expense-paths'
 import type { Attachment, Expense, User } from '@/lib/types'
 
 const RECEIPTS_BUCKET = 'receipts'
@@ -65,9 +69,11 @@ export async function getExpenseById(id: string): Promise<{ expense: Expense; us
   return { expense: toExpense(row), users: userRows.map(toUser) }
 }
 
-export async function createExpense(values: ExpenseFormValues): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function createExpense(
+  values: CreateExpenseInput,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const actor = await getUser()
-  const parsed = expenseFormSchema.safeParse(values)
+  const parsed = createExpenseInputSchema.safeParse(values)
   if (!parsed.success) return { ok: false, error: 'Invalid form data' }
 
   const amountCents = parseBahtInput(parsed.data.amountBaht)
@@ -75,20 +81,46 @@ export async function createExpense(values: ExpenseFormValues): Promise<{ ok: tr
 
   const frontedByUserId = parsed.data.paidBy === 'pot' ? null : parsed.data.paidBy
 
-  // Permission check
   if (frontedByUserId === null && !can(actor, 'expense.create.fromPot'))
     return { ok: false, error: 'Only admins can log pot expenses' }
   if (frontedByUserId !== null && frontedByUserId !== actor.id && !can(actor, 'expense.create.frontedByOther'))
     return { ok: false, error: 'Only admins can log expenses for others' }
 
-  await db.insert(expenses).values({
-    amountCents,
-    description: parsed.data.description,
-    category: parsed.data.category,
-    occurredAt: new Date(parsed.data.occurredAt),
-    frontedByUserId,
-    createdBy: actor.id,
-  })
+  // Client may supply an `id` so the receipt upload can target the correct
+  // path before the expense row exists. If absent, generate one server-side.
+  const expenseId = parsed.data.id ?? crypto.randomUUID()
+
+  if (
+    parsed.data.receiptStoragePath &&
+    !isReceiptPathForExpense(parsed.data.receiptStoragePath, expenseId)
+  ) {
+    return { ok: false, error: 'Receipt path mismatch' }
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx.insert(expenses).values({
+        id: expenseId,
+        amountCents,
+        description: parsed.data.description,
+        category: parsed.data.category,
+        occurredAt: new Date(parsed.data.occurredAt),
+        frontedByUserId,
+        createdBy: actor.id,
+      })
+      if (parsed.data.receiptStoragePath && parsed.data.receiptMimeType) {
+        await tx.insert(attachments).values({
+          parentType: 'expense',
+          parentId: expenseId,
+          storagePath: parsed.data.receiptStoragePath,
+          mimeType: parsed.data.receiptMimeType,
+          uploadedBy: actor.id,
+        })
+      }
+    })
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Could not save expense' }
+  }
 
   revalidatePath('/expenses')
   revalidatePath('/')

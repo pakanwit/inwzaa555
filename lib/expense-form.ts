@@ -35,6 +35,29 @@ export function payerOptions(currentUser: User, members: User[]) {
   ];
 }
 
+export const createExpenseInputSchema = expenseFormSchema
+  .extend({
+    // Optional: when present (e.g. uploaded a receipt first) it must match the
+    // storage path prefix. When absent, the server generates a fresh uuid.
+    id: z.string().uuid().optional(),
+    receiptStoragePath: z.string().optional(),
+    receiptMimeType: z
+      .enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+      .optional(),
+  })
+  .refine(
+    (v) => (v.receiptStoragePath == null) === (v.receiptMimeType == null),
+    {
+      message:
+        'receiptStoragePath and receiptMimeType must be both present or both absent',
+    },
+  )
+  .refine((v) => !v.receiptStoragePath || v.id != null, {
+    message: 'id is required when a receipt is attached',
+  });
+
+export type CreateExpenseInput = z.infer<typeof createExpenseInputSchema>;
+
 export const CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = [
   { value: 'food', label: 'Food & drink' },
   { value: 'transport', label: 'Transport' },
