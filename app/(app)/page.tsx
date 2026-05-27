@@ -1,23 +1,26 @@
 import Link from 'next/link'
-import { desc } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { users, expenses, contributions } from '@/lib/db/schema'
+import { users, expenses, contributions, attachments } from '@/lib/db/schema'
 import { getUser } from '@/lib/auth/server'
 import { computeBalances } from '@/lib/balance'
 import { formatBaht } from '@/lib/money'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { ExpenseRow, findFronter } from '@/components/features/expense-row'
-import type { User, Expense, Contribution } from '@/lib/types'
+import type { User, Expense, Contribution, Attachment } from '@/lib/types'
 
 function toUser(row: typeof users.$inferSelect): User {
   return { id: row.id, email: row.email ?? undefined, displayName: row.displayName, avatarUrl: row.avatarUrl ?? undefined, role: row.role, removedAt: row.removedAt?.toISOString(), createdAt: row.createdAt.toISOString() }
 }
-function toExpense(row: typeof expenses.$inferSelect): Expense {
-  return { id: row.id, amountCents: row.amountCents, description: row.description, category: row.category, occurredAt: row.occurredAt.toISOString(), frontedByUserId: row.frontedByUserId ?? undefined, reimbursedAt: row.reimbursedAt?.toISOString(), createdBy: row.createdBy, createdAt: row.createdAt.toISOString(), attachments: [] }
+function toAttachment(row: typeof attachments.$inferSelect): Attachment {
+  return { id: row.id, parentType: row.parentType, parentId: row.parentId, storagePath: row.storagePath, mimeType: row.mimeType, uploadedBy: row.uploadedBy, uploadedAt: row.uploadedAt.toISOString() }
 }
-function toContribution(row: typeof contributions.$inferSelect): Contribution {
-  return { id: row.id, userId: row.userId, amountCents: row.amountCents, contributedAt: row.contributedAt.toISOString(), note: row.note ?? undefined, createdBy: row.createdBy, createdAt: row.createdAt.toISOString(), attachments: [] }
+function toExpense(row: typeof expenses.$inferSelect, attachmentList: Attachment[] = []): Expense {
+  return { id: row.id, amountCents: row.amountCents, description: row.description, category: row.category, occurredAt: row.occurredAt.toISOString(), frontedByUserId: row.frontedByUserId ?? undefined, reimbursedAt: row.reimbursedAt?.toISOString(), createdBy: row.createdBy, createdAt: row.createdAt.toISOString(), attachments: attachmentList }
+}
+function toContribution(row: typeof contributions.$inferSelect, attachmentList: Attachment[] = []): Contribution {
+  return { id: row.id, userId: row.userId, amountCents: row.amountCents, contributedAt: row.contributedAt.toISOString(), note: row.note ?? undefined, createdBy: row.createdBy, createdAt: row.createdAt.toISOString(), attachments: attachmentList }
 }
 
 export default async function DashboardPage() {
@@ -29,8 +32,27 @@ export default async function DashboardPage() {
   ])
 
   const allUsers = userRows.map(toUser)
-  const allExpenses = expenseRows.map(toExpense)
-  const allContributions = contributionRows.map(toContribution)
+
+  const expenseIds = expenseRows.map((e) => e.id)
+  const contributionIds = contributionRows.map((c) => c.id)
+  const allParentIds = [...expenseIds, ...contributionIds]
+  const attachmentRows = allParentIds.length
+    ? await db
+        .select()
+        .from(attachments)
+        .where(and(inArray(attachments.parentId, allParentIds)))
+    : []
+  const expenseAttachments = new Map<string, Attachment[]>()
+  const contributionAttachments = new Map<string, Attachment[]>()
+  for (const row of attachmentRows) {
+    const target = row.parentType === 'expense' ? expenseAttachments : contributionAttachments
+    const list = target.get(row.parentId) ?? []
+    list.push(toAttachment(row))
+    target.set(row.parentId, list)
+  }
+
+  const allExpenses = expenseRows.map((e) => toExpense(e, expenseAttachments.get(e.id) ?? []))
+  const allContributions = contributionRows.map((c) => toContribution(c, contributionAttachments.get(c.id) ?? []))
   const b = computeBalances({ users: allUsers, contributions: allContributions, expenses: allExpenses })
   const recent = allExpenses.slice(0, 5)
 
