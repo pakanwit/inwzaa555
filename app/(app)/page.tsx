@@ -8,13 +8,11 @@ import { formatBaht } from '@/lib/money'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { ExpenseRow, findFronter } from '@/components/features/expense-row'
+import { toAttachment } from '@/lib/db/mappers'
 import type { User, Expense, Contribution, Attachment } from '@/lib/types'
 
 function toUser(row: typeof users.$inferSelect): User {
   return { id: row.id, email: row.email ?? undefined, displayName: row.displayName, avatarUrl: row.avatarUrl ?? undefined, role: row.role, removedAt: row.removedAt?.toISOString(), createdAt: row.createdAt.toISOString() }
-}
-function toAttachment(row: typeof attachments.$inferSelect): Attachment {
-  return { id: row.id, parentType: row.parentType, parentId: row.parentId, storagePath: row.storagePath, mimeType: row.mimeType, uploadedBy: row.uploadedBy, uploadedAt: row.uploadedAt.toISOString() }
 }
 function toExpense(row: typeof expenses.$inferSelect, attachmentList: Attachment[] = []): Expense {
   return { id: row.id, amountCents: row.amountCents, description: row.description, category: row.category, occurredAt: row.occurredAt.toISOString(), frontedByUserId: row.frontedByUserId ?? undefined, reimbursedAt: row.reimbursedAt?.toISOString(), createdBy: row.createdBy, createdAt: row.createdAt.toISOString(), attachments: attachmentList }

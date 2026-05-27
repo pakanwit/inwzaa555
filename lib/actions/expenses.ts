@@ -14,6 +14,7 @@ import {
   type CreateExpenseInput,
 } from '@/lib/expense-form'
 import { isReceiptPathForExpense } from '@/lib/actions/expense-paths'
+import { toAttachment } from '@/lib/db/mappers'
 import type { Attachment, Expense, User } from '@/lib/types'
 
 const RECEIPTS_BUCKET = 'receipts'
@@ -24,18 +25,6 @@ const uploadUrlSchema = z.object({
   mimeType: z.enum(ALLOWED_MIME),
   ext: z.enum(['jpg', 'jpeg', 'png', 'webp', 'heic']),
 })
-
-function toAttachment(row: typeof attachments.$inferSelect): Attachment {
-  return {
-    id: row.id,
-    parentType: row.parentType,
-    parentId: row.parentId,
-    storagePath: row.storagePath,
-    mimeType: row.mimeType,
-    uploadedBy: row.uploadedBy,
-    uploadedAt: row.uploadedAt.toISOString(),
-  }
-}
 
 function toExpense(
   row: typeof expenses.$inferSelect,

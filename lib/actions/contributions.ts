@@ -8,6 +8,7 @@ import { getUser } from '@/lib/auth/server'
 import { createSupabaseAdminClient } from '@/lib/auth/admin'
 import { can } from '@/lib/permissions'
 import { parseBahtInput } from '@/lib/money'
+import { toAttachment } from '@/lib/db/mappers'
 import type { Attachment, Contribution, User } from '@/lib/types'
 
 const RECEIPTS_BUCKET = 'receipts'
@@ -39,18 +40,6 @@ function toUser(row: typeof users.$inferSelect): User {
     role: row.role,
     removedAt: row.removedAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
-  }
-}
-
-function toAttachment(row: typeof attachments.$inferSelect): Attachment {
-  return {
-    id: row.id,
-    parentType: row.parentType,
-    parentId: row.parentId,
-    storagePath: row.storagePath,
-    mimeType: row.mimeType,
-    uploadedBy: row.uploadedBy,
-    uploadedAt: row.uploadedAt.toISOString(),
   }
 }
 
