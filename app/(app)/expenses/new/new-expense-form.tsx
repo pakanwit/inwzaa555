@@ -125,19 +125,20 @@ export default function NewExpenseForm({ currentUser, users }: { currentUser: Us
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs">Receipt (optional)</label>
+          <label className="font-bold">Receipt (optional)</label>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic"
             onChange={onPickReceipt}
-            className="text-xs"
+            className="bevel-in bg-white px-2 py-1 font-sans text-[13px]"
           />
-          {receiptError ? <p className="text-y2k-magenta text-xs">{receiptError}</p> : null}
+          {receiptError ? <span className="text-y2k-magenta text-sm">{receiptError}</span> : null}
           {receiptFile && !previewUrl ? (
-            <p className="text-xs text-y2k-blue">{receiptFile.name} (HEIC — preview not supported)</p>
+            <span className="text-y2k-blue text-sm">{receiptFile.name} (HEIC — preview not supported)</span>
           ) : null}
           {previewUrl ? (
-            <img src={previewUrl} alt="Receipt preview" className="max-h-48 mt-1 border border-y2k-blue" />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="Receipt preview" className="bevel-in mt-2 max-h-64 w-auto object-contain" />
           ) : null}
         </div>
 
