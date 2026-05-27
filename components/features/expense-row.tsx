@@ -1,5 +1,8 @@
+'use client'
+import { useState } from 'react'
 import Link from 'next/link';
 import { formatBaht } from '@/lib/money';
+import { getSignedReceiptDownloadUrl } from '@/lib/actions/expenses'
 import type { Expense, User } from '@/lib/types'
 import { Badge } from '@/components/y2k/badge';
 
@@ -10,6 +13,22 @@ export function ExpenseRow({
   expense: Expense;
   fronterName?: string;
 }) {
+  const receipt = expense.attachments[0]
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function openReceipt(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!receipt) return
+    setError(null)
+    setLoading(true)
+    const result = await getSignedReceiptDownloadUrl(receipt.storagePath)
+    setLoading(false)
+    if (!result.ok) { setError(result.error); return }
+    window.open(result.url, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <li className="bevel-in bg-white p-2 flex items-center justify-between gap-2">
       <div className="min-w-0">
@@ -33,6 +52,17 @@ export function ExpenseRow({
             <Badge>From pot</Badge>
           )}
         </div>
+        {receipt ? (
+          <button
+            type="button"
+            onClick={openReceipt}
+            disabled={loading}
+            className="text-xs underline mt-1"
+          >
+            {loading ? 'Loading…' : 'View receipt'}
+          </button>
+        ) : null}
+        {error ? <div className="text-y2k-magenta text-xs">{error}</div> : null}
       </div>
       <strong>{formatBaht(expense.amountCents)}</strong>
     </li>
