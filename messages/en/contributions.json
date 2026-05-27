@@ -1,0 +1,14 @@
+{
+  "fieldContributor": "Contributor",
+  "fieldAmount": "Amount (THB)",
+  "fieldDate": "Date",
+  "fieldNote": "Note",
+  "addNewMember": "+ Add new member…",
+  "addNewMemberTitle": "Add new member",
+  "fieldDisplayName": "Display name",
+  "fieldEmail": "Email",
+  "namePlaceholder": "e.g. Bob",
+  "emailPlaceholder": "bob@example.com",
+  "nameRequired": "Name is required",
+  "meSuffix": "{name} (me)"
+}

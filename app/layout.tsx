@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Audiowide, Chakra_Petch } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -25,15 +27,19 @@ export const metadata: Metadata = {
   description: 'A very serious financial system for the Rich Boys 2D1N trip.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
-    <html lang="en" className={`${audiowide.variable} ${chakra.variable}`}>
+    <html lang={locale} className={`${audiowide.variable} ${chakra.variable}`}>
       <body>
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,0 +1,11 @@
+{
+  "fieldDisplayName": "Display name",
+  "fieldEmail": "Email",
+  "fieldRole": "Role",
+  "roleMember": "Member",
+  "roleAdmin": "Admin",
+  "cannotChangeOwnRole": "You cannot change your own role.",
+  "magicLinkReady": "Magic link ready",
+  "magicLinkSendBlurb": "Send this link to your friend:",
+  "copyMagicLink": "Copy magic link"
+}

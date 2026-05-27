@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslations } from 'next-intl'
 import { z } from 'zod'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
@@ -39,6 +40,8 @@ type Values = z.infer<typeof schema>
 
 export default function NewContributionForm({ currentUser, users }: { currentUser: User; users: User[] }) {
   const router = useRouter()
+  const t = useTranslations('contributions')
+  const tCommon = useTranslations('common')
   const [serverError, setServerError] = useState<string | null>(null)
   const [slipFile, setSlipFile] = useState<File | null>(null)
   const [slipError, setSlipError] = useState<string | null>(null)
@@ -67,9 +70,9 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
   const memberOptions = [
     ...roster.map((u) => ({
       value: u.id,
-      label: u.id === currentUser.id ? `${u.displayName} (me)` : u.displayName,
+      label: u.id === currentUser.id ? t('meSuffix', { name: u.displayName }) : u.displayName,
     })),
-    { value: ADD_NEW_MEMBER, label: '+ Add new member…' },
+    { value: ADD_NEW_MEMBER, label: t('addNewMember') },
   ]
 
   function onContributorChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -82,7 +85,7 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
 
   async function onAddMember() {
     setAddMemberError(null)
-    if (!newName.trim()) { setAddMemberError('Name is required'); return }
+    if (!newName.trim()) { setAddMemberError(t('nameRequired')); return }
     setAddingMember(true)
     const result = await createMember({ displayName: newName, email: newEmail || undefined })
     setAddingMember(false)
@@ -99,12 +102,12 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
     const file = e.target.files?.[0] ?? null
     if (!file) { setSlipFile(null); setPreviewUrl(null); return }
     if (!ACCEPTED_MIME.includes(file.type as Mime)) {
-      setSlipError('Only JPEG, PNG, WebP, or HEIC images are accepted')
+      setSlipError(tCommon('imageOnlyAccepted'))
       setSlipFile(null)
       return
     }
     if (file.size > MAX_BYTES) {
-      setSlipError('Slip must be 5 MB or smaller')
+      setSlipError(tCommon('imageTooLarge'))
       setSlipFile(null)
       return
     }
@@ -135,7 +138,7 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
     const { error: uploadError } = await supabase.storage
       .from('receipts')
       .uploadToSignedUrl(upload.storagePath, upload.token, slipFile, { contentType: mimeType })
-    if (uploadError) { setServerError(`Upload failed: ${uploadError.message}`); return }
+    if (uploadError) { setServerError(tCommon('uploadFailed', { message: uploadError.message })); return }
 
     const result = await createContribution({
       ...v,
@@ -151,46 +154,46 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
     <Window title="New contribution">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         <Select
-          label="Contributor"
+          label={t('fieldContributor')}
           options={memberOptions}
           error={errors.userId?.message}
           {...register('userId', { onChange: onContributorChange })}
         />
         {showAddMember ? (
           <div className="bevel-in bg-y2k-chrome-100 flex flex-col gap-2 p-3">
-            <strong className="text-sm">Add new member</strong>
+            <strong className="text-sm">{t('addNewMemberTitle')}</strong>
             <TextInput
-              label="Display name"
+              label={t('fieldDisplayName')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="e.g. Bob"
+              placeholder={t('namePlaceholder')}
             />
             <TextInput
-              label="Email (optional)"
+              label={`${t('fieldEmail')} ${tCommon('optional')}`}
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="bob@example.com"
+              placeholder={t('emailPlaceholder')}
             />
             {addMemberError ? <span className="text-y2k-magenta text-sm">{addMemberError}</span> : null}
             <div className="flex gap-2">
               <Button type="button" variant="primary" onClick={onAddMember} disabled={addingMember}>
-                {addingMember ? 'Adding…' : 'Add'}
+                {addingMember ? tCommon('adding') : tCommon('add')}
               </Button>
               <Button
                 type="button"
                 onClick={() => { setShowAddMember(false); setAddMemberError(null) }}
               >
-                Cancel
+                {tCommon('cancel')}
               </Button>
             </div>
           </div>
         ) : null}
         <div className="grid gap-3 md:grid-cols-2">
-          <TextInput label="Amount (THB)" inputMode="numeric" error={errors.amountBaht?.message} {...register('amountBaht')} />
-          <TextInput label="Date" type="date" error={errors.contributedAt?.message} {...register('contributedAt')} />
+          <TextInput label={t('fieldAmount')} inputMode="numeric" error={errors.amountBaht?.message} {...register('amountBaht')} />
+          <TextInput label={t('fieldDate')} type="date" error={errors.contributedAt?.message} {...register('contributedAt')} />
         </div>
-        <TextInput label="Note (optional)" {...register('note')} />
+        <TextInput label={`${t('fieldNote')} ${tCommon('optional')}`} {...register('note')} />
         <div className="flex flex-col gap-1">
           <label className="font-bold">Bank slip (required)</label>
           <input
@@ -207,8 +210,8 @@ export default function NewContributionForm({ currentUser, users }: { currentUse
         </div>
         {serverError ? <p className="text-y2k-magenta text-sm">{serverError}</p> : null}
         <div className="flex gap-2">
-          <Button variant="primary" type="submit" disabled={isSubmitting}>Save</Button>
-          <Button type="button" onClick={() => router.back()}>Cancel</Button>
+          <Button variant="primary" type="submit" disabled={isSubmitting}>{tCommon('save')}</Button>
+          <Button type="button" onClick={() => router.back()}>{tCommon('cancel')}</Button>
         </div>
       </form>
     </Window>

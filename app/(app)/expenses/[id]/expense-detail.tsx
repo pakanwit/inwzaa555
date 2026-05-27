@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { Badge } from '@/components/y2k/badge'
@@ -14,6 +15,7 @@ export default function ExpenseDetail({ expense, users, currentUser }: {
   expense: Expense; users: User[]; currentUser: User
 }) {
   const router = useRouter()
+  const tCommon = useTranslations('common')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -58,7 +60,7 @@ export default function ExpenseDetail({ expense, users, currentUser }: {
         {receipt ? (
           <div className="flex flex-col gap-1 mt-2">
             <span className="font-bold">Receipt</span>
-            {receiptLoading ? <span className="text-y2k-blue text-sm">Loading…</span> : null}
+            {receiptLoading ? <span className="text-y2k-blue text-sm">{tCommon('loading')}</span> : null}
             {receiptLoadError ? <span className="text-y2k-magenta text-sm">{receiptLoadError}</span> : null}
             {receiptUrl && receipt.mimeType !== 'image/heic' ? (
               <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
@@ -82,19 +84,19 @@ export default function ExpenseDetail({ expense, users, currentUser }: {
             </Button>
           ) : null}
           {canDelete ? (
-            <Button variant="danger" onClick={() => setConfirmDelete(true)}>Delete</Button>
+            <Button variant="danger" onClick={() => setConfirmDelete(true)}>{tCommon('delete')}</Button>
           ) : null}
-          <Button onClick={() => router.push('/expenses')}>Back</Button>
+          <Button onClick={() => router.push('/expenses')}>{tCommon('back')}</Button>
         </div>
       </div>
       <Dialog open={confirmDelete} title="Delete expense?" onClose={() => setConfirmDelete(false)}>
         <p className="mb-3">Remove "<strong>{expense.description}</strong>" from the ledger?</p>
         <div className="flex gap-2 justify-end">
-          <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+          <Button onClick={() => setConfirmDelete(false)}>{tCommon('cancel')}</Button>
           <Button variant="danger" disabled={isPending} onClick={() => {
             startTransition(async () => { await deleteExpense(expense.id) })
           }}>
-            Yes, delete
+            {tCommon('yesDelete')}
           </Button>
         </div>
       </Dialog>

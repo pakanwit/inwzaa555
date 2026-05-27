@@ -1,6 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { Badge } from '@/components/y2k/badge'
@@ -17,11 +18,6 @@ import {
 import type { User } from '@/lib/types'
 import type { MemberWithStats } from '@/lib/actions/members'
 
-const ROLE_OPTIONS = [
-  { value: 'member', label: 'Member' },
-  { value: 'admin', label: 'Admin' },
-]
-
 export default function MembersClient({
   currentUser,
   members,
@@ -30,7 +26,14 @@ export default function MembersClient({
   members: MemberWithStats[]
 }) {
   const router = useRouter()
+  const tCommon = useTranslations('common')
+  const tMembers = useTranslations('members')
   const [isPending, startTransition] = useTransition()
+
+  const roleOptions = [
+    { value: 'member', label: tMembers('roleMember') },
+    { value: 'admin', label: tMembers('roleAdmin') },
+  ]
   const [magicLink, setMagicLink] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -105,7 +108,7 @@ export default function MembersClient({
     <div className="space-y-3">
       {error ? (
         <p className="text-y2k-magenta text-sm bevel-in bg-white p-2">
-          {error} <button className="underline ml-2" onClick={() => setError(null)}>dismiss</button>
+          {error} <button className="underline ml-2" onClick={() => setError(null)}>{tCommon('dismiss')}</button>
         </p>
       ) : null}
       <p className="text-xs">
@@ -128,12 +131,12 @@ export default function MembersClient({
                   {isAdmin && !u.removedAt && !isEditing ? (
                     <div className="ml-auto flex gap-1 flex-wrap">
                       {u.email ? (
-                        <Button disabled={isPending} onClick={() => copyMagicLink(u.id)}>Copy magic link</Button>
+                        <Button disabled={isPending} onClick={() => copyMagicLink(u.id)}>{tMembers('copyMagicLink')}</Button>
                       ) : null}
-                      <Button disabled={isPending} onClick={() => startEdit(u)}>Edit</Button>
+                      <Button disabled={isPending} onClick={() => startEdit(u)}>{tCommon('edit')}</Button>
                       {canHardDelete ? (
                         <Button variant="danger" disabled={isPending} onClick={() => setConfirmDelete(u)}>
-                          Delete forever
+                          {tCommon('deleteForever')}
                         </Button>
                       ) : (
                         <Button
@@ -141,7 +144,7 @@ export default function MembersClient({
                           disabled={isPending || isSelf}
                           onClick={() => setConfirmRemove(u)}
                         >
-                          Remove
+                          {tCommon('remove')}
                         </Button>
                       )}
                     </div>
@@ -150,31 +153,31 @@ export default function MembersClient({
                 {isEditing ? (
                   <div className="bevel-in bg-y2k-chrome-100 flex flex-col gap-2 p-3">
                     <TextInput
-                      label="Display name"
+                      label={tMembers('fieldDisplayName')}
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                     />
                     <TextInput
-                      label="Email (optional)"
+                      label={`${tMembers('fieldEmail')} ${tCommon('optional')}`}
                       type="email"
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
                     />
                     <Select
-                      label="Role"
-                      options={ROLE_OPTIONS}
+                      label={tMembers('fieldRole')}
+                      options={roleOptions}
                       value={editRole}
                       onChange={(e) => setEditRole(e.target.value as 'admin' | 'member')}
                       disabled={isSelf}
                     />
                     {isSelf ? (
-                      <p className="text-xs text-y2k-chrome-700">You cannot change your own role.</p>
+                      <p className="text-xs text-y2k-chrome-700">{tMembers('cannotChangeOwnRole')}</p>
                     ) : null}
                     <div className="flex gap-2">
                       <Button variant="primary" disabled={isPending} onClick={saveEdit}>
-                        {isPending ? 'Saving…' : 'Save'}
+                        {isPending ? tCommon('saving') : tCommon('save')}
                       </Button>
-                      <Button disabled={isPending} onClick={cancelEdit}>Cancel</Button>
+                      <Button disabled={isPending} onClick={cancelEdit}>{tCommon('cancel')}</Button>
                     </div>
                   </div>
                 ) : null}
@@ -184,12 +187,12 @@ export default function MembersClient({
         </ul>
       </Window>
 
-      <Dialog open={!!magicLink} title="Magic link ready" onClose={() => setMagicLink(null)}>
-        <p className="mb-2">Send this link to your friend:</p>
+      <Dialog open={!!magicLink} title={tMembers('magicLinkReady')} onClose={() => setMagicLink(null)}>
+        <p className="mb-2">{tMembers('magicLinkSendBlurb')}</p>
         <code className="block bevel-in bg-white p-2 break-all text-xs mb-3">{magicLink}</code>
         <div className="flex justify-end gap-2">
-          <Button onClick={() => { if (magicLink) navigator.clipboard?.writeText(magicLink) }}>Copy</Button>
-          <Button onClick={() => setMagicLink(null)}>Done</Button>
+          <Button onClick={() => { if (magicLink) navigator.clipboard?.writeText(magicLink) }}>{tCommon('copy')}</Button>
+          <Button onClick={() => setMagicLink(null)}>{tCommon('done')}</Button>
         </div>
       </Dialog>
 
@@ -202,25 +205,25 @@ export default function MembersClient({
           Remove <strong>{confirmRemove?.displayName}</strong>? Their history stays in the ledger, but they can&apos;t sign in and won&apos;t appear in pickers. You can restore them later by clearing <code>removed_at</code> in the database.
         </p>
         <div className="flex justify-end gap-2">
-          <Button onClick={() => setConfirmRemove(null)}>Cancel</Button>
+          <Button onClick={() => setConfirmRemove(null)}>{tCommon('cancel')}</Button>
           <Button variant="danger" disabled={isPending} onClick={runSoftRemove}>
-            {isPending ? 'Removing…' : 'Remove'}
+            {isPending ? tCommon('removing') : tCommon('remove')}
           </Button>
         </div>
       </Dialog>
 
       <Dialog
         open={!!confirmDelete}
-        title="Delete forever?"
+        title={tCommon('deleteForeverConfirm')}
         onClose={() => setConfirmDelete(null)}
       >
         <p className="mb-3">
-          Delete <strong>{confirmDelete?.displayName}</strong>? This cannot be undone.
+          Delete <strong>{confirmDelete?.displayName}</strong>? {tCommon('cannotBeUndone')}
         </p>
         <div className="flex justify-end gap-2">
-          <Button onClick={() => setConfirmDelete(null)}>Cancel</Button>
+          <Button onClick={() => setConfirmDelete(null)}>{tCommon('cancel')}</Button>
           <Button variant="danger" disabled={isPending} onClick={confirmHardDelete}>
-            {isPending ? 'Deleting…' : 'Delete forever'}
+            {isPending ? tCommon('deleting') : tCommon('deleteForever')}
           </Button>
         </div>
       </Dialog>

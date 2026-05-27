@@ -1,6 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { formatBaht, parseBahtInput } from '@/lib/money'
 import {
   getSignedSlipDownloadUrl,
@@ -25,6 +26,8 @@ export function ContributionRow({
   isAdmin: boolean
 }) {
   const router = useRouter()
+  const tCommon = useTranslations('common')
+  const tContrib = useTranslations('contributions')
   const slip = contribution.attachments[0]
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,7 +94,7 @@ export function ContributionRow({
               disabled={loading}
               className="text-xs underline mt-1"
             >
-              {loading ? 'Loading…' : 'View slip'}
+              {loading ? tCommon('loading') : 'View slip'}
             </button>
           ) : null}
           {error ? <div className="text-y2k-magenta text-xs">{error}</div> : null}
@@ -100,8 +103,8 @@ export function ContributionRow({
           <strong>{formatBaht(contribution.amountCents)}</strong>
           {isAdmin && !editing ? (
             <div className="flex gap-1">
-              <Button onClick={() => setEditing(true)} disabled={isPending}>Edit</Button>
-              <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={isPending}>Delete</Button>
+              <Button onClick={() => setEditing(true)} disabled={isPending}>{tCommon('edit')}</Button>
+              <Button variant="danger" onClick={() => setConfirmDelete(true)} disabled={isPending}>{tCommon('delete')}</Button>
             </div>
           ) : null}
         </div>
@@ -110,36 +113,36 @@ export function ContributionRow({
       {editing ? (
         <div className="bevel-in bg-y2k-chrome-100 flex flex-col gap-2 p-3">
           <Select
-            label="Contributor"
+            label={tContrib('fieldContributor')}
             options={memberOptions}
             value={editUserId}
             onChange={(e) => setEditUserId(e.target.value)}
           />
           <div className="grid gap-2 md:grid-cols-2">
             <TextInput
-              label="Amount (THB)"
+              label={tContrib('fieldAmount')}
               inputMode="numeric"
               value={editAmount}
               onChange={(e) => setEditAmount(e.target.value)}
             />
             <TextInput
-              label="Date"
+              label={tContrib('fieldDate')}
               type="date"
               value={editDate}
               onChange={(e) => setEditDate(e.target.value)}
             />
           </div>
           <TextInput
-            label="Note (optional)"
+            label={`${tContrib('fieldNote')} ${tCommon('optional')}`}
             value={editNote}
             onChange={(e) => setEditNote(e.target.value)}
           />
           <p className="text-xs text-y2k-chrome-700">Slip image can&apos;t be replaced here — delete and re-add if it&apos;s wrong.</p>
           <div className="flex gap-2">
             <Button variant="primary" onClick={saveEdit} disabled={isPending}>
-              {isPending ? 'Saving…' : 'Save'}
+              {isPending ? tCommon('saving') : tCommon('save')}
             </Button>
-            <Button onClick={() => { setEditing(false); setError(null) }} disabled={isPending}>Cancel</Button>
+            <Button onClick={() => { setEditing(false); setError(null) }} disabled={isPending}>{tCommon('cancel')}</Button>
           </div>
         </div>
       ) : null}
@@ -153,9 +156,9 @@ export function ContributionRow({
           Delete this contribution of <strong>{formatBaht(contribution.amountCents)}</strong> from <strong>{user?.displayName ?? 'unknown'}</strong>? The slip image will also be removed. This can&apos;t be undone.
         </p>
         <div className="flex justify-end gap-2">
-          <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+          <Button onClick={() => setConfirmDelete(false)}>{tCommon('cancel')}</Button>
           <Button variant="danger" onClick={runDelete} disabled={isPending}>
-            {isPending ? 'Deleting…' : 'Delete'}
+            {isPending ? tCommon('deleting') : tCommon('delete')}
           </Button>
         </div>
       </Dialog>

@@ -1,0 +1,22 @@
+{
+  "filtersTitle": "ตัวกรอง",
+  "filterCategoryLabel": "หมวดหมู่",
+  "filterCategoryAll": "ทุกหมวดหมู่",
+  "filterPaidByLabel": "ชำระโดย",
+  "filterPaidByAnyone": "ใครก็ได้",
+  "filterStatusLabel": "สถานะ",
+  "filterStatusAll": "ทั้งหมด",
+  "filterStatusFromPot": "จาก Pot",
+  "filterStatusUnsettled": "ยังไม่คืนเงิน",
+  "filterStatusReimbursed": "คืนเงินแล้ว",
+  "fieldDescription": "รายละเอียด",
+  "fieldAmount": "จำนวน (THB)",
+  "fieldDate": "วันที่",
+  "fieldCategory": "หมวดหมู่",
+  "fieldPaidBy": "ชำระโดย",
+  "categoryFood": "อาหารและเครื่องดื่ม",
+  "categoryTransport": "การเดินทาง",
+  "categoryLodging": "ที่พัก",
+  "categoryActivity": "กิจกรรม",
+  "categoryOther": "อื่นๆ"
+}

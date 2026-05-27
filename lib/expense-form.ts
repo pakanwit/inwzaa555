@@ -58,10 +58,10 @@ export const createExpenseInputSchema = expenseFormSchema
 
 export type CreateExpenseInput = z.infer<typeof createExpenseInputSchema>;
 
-export const CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = [
-  { value: 'food', label: 'Food & drink' },
-  { value: 'transport', label: 'Transport' },
-  { value: 'lodging', label: 'Lodging' },
-  { value: 'activity', label: 'Activity' },
-  { value: 'other', label: 'Other' },
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  'food',
+  'transport',
+  'lodging',
+  'activity',
+  'other',
 ];

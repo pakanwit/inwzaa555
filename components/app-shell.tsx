@@ -2,25 +2,31 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import clsx from 'clsx'
+import { LocaleToggle } from '@/components/locale-toggle'
 import { StatusBar } from '@/components/y2k/status-bar'
+import type { AppLocale } from '@/i18n/request'
 import type { User } from '@/lib/types'
-
-const NAV = [
-  { href: '/', label: 'Home' },
-  { href: '/expenses', label: 'Expenses' },
-  { href: '/contributions', label: 'Pot' },
-  { href: '/members', label: 'Members' },
-]
 
 export function AppShell({
   children,
   currentUser,
+  locale,
 }: {
   children: React.ReactNode
   currentUser: User
+  locale: AppLocale
 }) {
   const pathname = usePathname()
+  const t = useTranslations('nav')
+
+  const nav = [
+    { href: '/', label: t('home') },
+    { href: '/expenses', label: 'Expenses' },
+    { href: '/contributions', label: 'Pot' },
+    { href: '/members', label: 'Members' },
+  ]
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -29,7 +35,7 @@ export function AppShell({
         aria-label="Primary"
       >
         <strong className="mr-2">inwzaa555</strong>
-        {NAV.map((n) => {
+        {nav.map((n) => {
           const active = pathname === n.href
           return (
             <Link
@@ -44,8 +50,9 @@ export function AppShell({
             </Link>
           )
         })}
-        <span className="ml-auto text-xs">
-          Signed in: {currentUser.displayName}
+        <LocaleToggle current={locale} className="ml-auto" />
+        <span className="text-xs">
+          {t('signedInAs', { name: currentUser.displayName })}
         </span>
       </nav>
       <main className="flex-1 p-3 md:p-6 max-w-3xl w-full mx-auto">{children}</main>

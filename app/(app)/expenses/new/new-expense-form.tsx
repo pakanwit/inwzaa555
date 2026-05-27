@@ -3,12 +3,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslations } from 'next-intl'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { TextInput } from '@/components/y2k/text-input'
 import { Select } from '@/components/y2k/select'
 import { createExpense, getSignedReceiptUploadUrl } from '@/lib/actions/expenses'
-import { expenseFormSchema, type ExpenseFormValues, payerOptions, CATEGORY_OPTIONS } from '@/lib/expense-form'
+import { expenseFormSchema, type ExpenseFormValues, payerOptions, EXPENSE_CATEGORIES } from '@/lib/expense-form'
 import { createSupabaseBrowserClient } from '@/lib/auth/client'
 import type { User } from '@/lib/types'
 
@@ -25,6 +26,8 @@ const EXT_BY_MIME: Record<Mime, 'jpg' | 'png' | 'webp' | 'heic'> = {
 
 export default function NewExpenseForm({ currentUser, users }: { currentUser: User; users: User[] }) {
   const router = useRouter()
+  const t = useTranslations('expenses')
+  const tCommon = useTranslations('common')
   const [serverError, setServerError] = useState<string | null>(null)
   const [receiptError, setReceiptError] = useState<string | null>(null)
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
@@ -32,6 +35,18 @@ export default function NewExpenseForm({ currentUser, users }: { currentUser: Us
   const previewUrlRef = useRef<string | null>(null)
 
   const expenseId = useMemo(() => crypto.randomUUID(), [])
+
+  const categoryLabels: Record<ExpenseFormValues['category'], string> = {
+    food: t('categoryFood'),
+    transport: t('categoryTransport'),
+    lodging: t('categoryLodging'),
+    activity: t('categoryActivity'),
+    other: t('categoryOther'),
+  }
+  const categoryOptions = EXPENSE_CATEGORIES.map((value) => ({
+    value,
+    label: categoryLabels[value],
+  }))
 
   useEffect(() => {
     return () => {
@@ -57,12 +72,12 @@ export default function NewExpenseForm({ currentUser, users }: { currentUser: Us
     const file = e.target.files?.[0]
     if (!file) { setReceiptFile(null); return }
     if (!ACCEPTED_MIME.includes(file.type as Mime)) {
-      setReceiptError('Only JPEG, PNG, WebP, or HEIC images are accepted')
+      setReceiptError(tCommon('imageOnlyAccepted'))
       setReceiptFile(null)
       return
     }
     if (file.size > MAX_BYTES) {
-      setReceiptError('Receipt must be 5 MB or smaller')
+      setReceiptError(tCommon('imageTooLarge'))
       setReceiptFile(null)
       return
     }
@@ -95,7 +110,7 @@ export default function NewExpenseForm({ currentUser, users }: { currentUser: Us
       const { error: uploadError } = await supabase.storage
         .from('receipts')
         .uploadToSignedUrl(upload.storagePath, upload.token, receiptFile, { contentType: mimeType })
-      if (uploadError) { setServerError(`Upload failed: ${uploadError.message}`); return }
+      if (uploadError) { setServerError(tCommon('uploadFailed', { message: uploadError.message })); return }
 
       receiptStoragePath = upload.storagePath
       receiptMimeType = mimeType
@@ -114,14 +129,14 @@ export default function NewExpenseForm({ currentUser, users }: { currentUser: Us
   return (
     <Window title="New expense">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <TextInput label="Description" error={errors.description?.message} {...register('description')} />
+        <TextInput label={t('fieldDescription')} error={errors.description?.message} {...register('description')} />
         <div className="grid gap-3 md:grid-cols-2">
-          <TextInput label="Amount (THB)" inputMode="numeric" error={errors.amountBaht?.message} {...register('amountBaht')} />
-          <TextInput label="Date" type="date" error={errors.occurredAt?.message} {...register('occurredAt')} />
+          <TextInput label={t('fieldAmount')} inputMode="numeric" error={errors.amountBaht?.message} {...register('amountBaht')} />
+          <TextInput label={t('fieldDate')} type="date" error={errors.occurredAt?.message} {...register('occurredAt')} />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <Select label="Category" error={errors.category?.message} options={CATEGORY_OPTIONS} {...register('category')} />
-          <Select label="Paid by" error={errors.paidBy?.message} options={options} {...register('paidBy')} />
+          <Select label={t('fieldCategory')} error={errors.category?.message} options={categoryOptions} {...register('category')} />
+          <Select label={t('fieldPaidBy')} error={errors.paidBy?.message} options={options} {...register('paidBy')} />
         </div>
 
         <div className="flex flex-col gap-1">
@@ -145,7 +160,7 @@ export default function NewExpenseForm({ currentUser, users }: { currentUser: Us
         {serverError ? <p className="text-y2k-magenta text-sm">{serverError}</p> : null}
         <div className="flex gap-2">
           <Button variant="primary" type="submit" disabled={isSubmitting}>Save expense</Button>
-          <Button type="button" onClick={() => router.back()}>Cancel</Button>
+          <Button type="button" onClick={() => router.back()}>{tCommon('cancel')}</Button>
         </div>
       </form>
     </Window>

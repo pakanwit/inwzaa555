@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link';
+import { useTranslations } from 'next-intl'
 import { formatBaht } from '@/lib/money';
 import { getSignedReceiptDownloadUrl } from '@/lib/actions/expenses'
-import type { Expense, User } from '@/lib/types'
+import type { Expense } from '@/lib/types'
 import { Badge } from '@/components/y2k/badge';
 
 export function ExpenseRow({
@@ -13,6 +14,7 @@ export function ExpenseRow({
   expense: Expense;
   fronterName?: string;
 }) {
+  const tCommon = useTranslations('common')
   const receipt = expense.attachments[0]
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +61,7 @@ export function ExpenseRow({
             disabled={loading}
             className="text-xs underline mt-1"
           >
-            {loading ? 'Loading…' : 'View receipt'}
+            {loading ? tCommon('loading') : 'View receipt'}
           </button>
         ) : null}
         {error ? <div className="text-y2k-magenta text-xs">{error}</div> : null}

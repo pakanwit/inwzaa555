@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { Select } from '@/components/y2k/select'
@@ -8,19 +9,20 @@ import { ExpenseRow } from '@/components/features/expense-row'
 import { findFronter } from '@/lib/expense-helpers'
 import type { Expense, User, ExpenseCategory } from '@/lib/types'
 
-const CATEGORIES: { value: ExpenseCategory | 'all'; label: string }[] = [
-  { value: 'all', label: 'All categories' },
-  { value: 'food', label: 'Food & drink' },
-  { value: 'transport', label: 'Transport' },
-  { value: 'lodging', label: 'Lodging' },
-  { value: 'activity', label: 'Activity' },
-  { value: 'other', label: 'Other' },
-]
-
 export default function ExpensesClient({ expenses, users }: { expenses: Expense[]; users: User[] }) {
+  const t = useTranslations('expenses')
   const [cat, setCat] = useState<string>('all')
   const [payer, setPayer] = useState<string>('all')
   const [status, setStatus] = useState<string>('all')
+
+  const categories: { value: ExpenseCategory | 'all'; label: string }[] = [
+    { value: 'all', label: t('filterCategoryAll') },
+    { value: 'food', label: t('categoryFood') },
+    { value: 'transport', label: t('categoryTransport') },
+    { value: 'lodging', label: t('categoryLodging') },
+    { value: 'activity', label: t('categoryActivity') },
+    { value: 'other', label: t('categoryOther') },
+  ]
 
   const filtered = expenses
     .filter((e) => cat === 'all' || e.category === cat)
@@ -43,33 +45,33 @@ export default function ExpensesClient({ expenses, users }: { expenses: Expense[
         <h1 className="text-lg font-bold">Expenses</h1>
         <Link href="/expenses/new"><Button variant="primary">Add expense</Button></Link>
       </div>
-      <Window title="Filters">
+      <Window title={t('filtersTitle')}>
         <div className="grid gap-3 md:grid-cols-3">
           <Select
-            label="Category"
+            label={t('filterCategoryLabel')}
             value={cat}
             onChange={(e) => setCat(e.target.value)}
-            options={CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+            options={categories.map((c) => ({ value: c.value, label: c.label }))}
           />
           <Select
-            label="Paid by"
+            label={t('filterPaidByLabel')}
             value={payer}
             onChange={(e) => setPayer(e.target.value)}
             options={[
-              { value: 'all', label: 'Anyone' },
+              { value: 'all', label: t('filterPaidByAnyone') },
               { value: 'pot', label: 'Pot' },
               ...users.map((u) => ({ value: u.id, label: u.displayName })),
             ]}
           />
           <Select
-            label="Status"
+            label={t('filterStatusLabel')}
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'pot', label: 'From pot' },
-              { value: 'unsettled', label: 'Unsettled fronts' },
-              { value: 'reimbursed', label: 'Reimbursed' },
+              { value: 'all', label: t('filterStatusAll') },
+              { value: 'pot', label: t('filterStatusFromPot') },
+              { value: 'unsettled', label: t('filterStatusUnsettled') },
+              { value: 'reimbursed', label: t('filterStatusReimbursed') },
             ]}
           />
         </div>

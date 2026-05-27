@@ -1,0 +1,14 @@
+{
+  "fieldContributor": "ผู้ลงเงิน",
+  "fieldAmount": "จำนวน (THB)",
+  "fieldDate": "วันที่",
+  "fieldNote": "หมายเหตุ",
+  "addNewMember": "+ เพิ่ม Member ใหม่…",
+  "addNewMemberTitle": "เพิ่ม Member ใหม่",
+  "fieldDisplayName": "ชื่อที่แสดง",
+  "fieldEmail": "อีเมล",
+  "namePlaceholder": "เช่น Bob",
+  "emailPlaceholder": "bob@example.com",
+  "nameRequired": "ต้องระบุชื่อ",
+  "meSuffix": "{name} (ฉัน)"
+}

@@ -1,0 +1,22 @@
+{
+  "filtersTitle": "Filters",
+  "filterCategoryLabel": "Category",
+  "filterCategoryAll": "All categories",
+  "filterPaidByLabel": "Paid by",
+  "filterPaidByAnyone": "Anyone",
+  "filterStatusLabel": "Status",
+  "filterStatusAll": "All",
+  "filterStatusFromPot": "From pot",
+  "filterStatusUnsettled": "Unsettled fronts",
+  "filterStatusReimbursed": "Reimbursed",
+  "fieldDescription": "Description",
+  "fieldAmount": "Amount (THB)",
+  "fieldDate": "Date",
+  "fieldCategory": "Category",
+  "fieldPaidBy": "Paid by",
+  "categoryFood": "Food & drink",
+  "categoryTransport": "Transport",
+  "categoryLodging": "Lodging",
+  "categoryActivity": "Activity",
+  "categoryOther": "Other"
+}
