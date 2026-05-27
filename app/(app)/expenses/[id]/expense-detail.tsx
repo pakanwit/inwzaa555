@@ -1,13 +1,13 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { Window } from '@/components/y2k/window'
 import { Button } from '@/components/y2k/button'
 import { Badge } from '@/components/y2k/badge'
 import { Dialog } from '@/components/y2k/dialog'
 import { formatBaht } from '@/lib/money'
 import { can } from '@/lib/permissions'
-import { deleteExpense, markExpenseReimbursed } from '@/lib/actions/expenses'
+import { deleteExpense, getSignedReceiptDownloadUrl, markExpenseReimbursed } from '@/lib/actions/expenses'
 import type { Expense, User } from '@/lib/types'
 
 export default function ExpenseDetail({ expense, users, currentUser }: {
@@ -16,6 +16,24 @@ export default function ExpenseDetail({ expense, users, currentUser }: {
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  const receipt = expense.attachments[0]
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [receiptLoadError, setReceiptLoadError] = useState<string | null>(null)
+  const [receiptLoading, setReceiptLoading] = useState(false)
+
+  useEffect(() => {
+    if (!receipt) return
+    let cancelled = false
+    setReceiptLoading(true)
+    getSignedReceiptDownloadUrl(receipt.storagePath).then((res) => {
+      if (cancelled) return
+      setReceiptLoading(false)
+      if (res.ok) setReceiptUrl(res.url)
+      else setReceiptLoadError(res.error)
+    })
+    return () => { cancelled = true }
+  }, [receipt?.storagePath])
 
   const fronter = expense.frontedByUserId
     ? users.find((u) => u.id === expense.frontedByUserId)
@@ -37,6 +55,24 @@ export default function ExpenseDetail({ expense, users, currentUser }: {
           <span>·</span>
           <span>{new Date(expense.occurredAt).toLocaleDateString()}</span>
         </div>
+        {receipt ? (
+          <div className="flex flex-col gap-1 mt-2">
+            <span className="font-bold">Receipt</span>
+            {receiptLoading ? <span className="text-y2k-blue text-sm">Loading…</span> : null}
+            {receiptLoadError ? <span className="text-y2k-magenta text-sm">{receiptLoadError}</span> : null}
+            {receiptUrl && receipt.mimeType !== 'image/heic' ? (
+              <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={receiptUrl} alt="Receipt" className="bevel-in mt-1 max-h-64 w-auto object-contain" />
+              </a>
+            ) : null}
+            {receiptUrl && receipt.mimeType === 'image/heic' ? (
+              <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="text-sm underline">
+                Open receipt (HEIC)
+              </a>
+            ) : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2 mt-2">
           {fronter && !expense.reimbursedAt && canReimburse ? (
             <Button variant="primary" disabled={isPending} onClick={() => {
